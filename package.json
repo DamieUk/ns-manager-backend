@@ -2,10 +2,12 @@
   "name": "numenor-backend",
   "version": "1.0.0",
   "description": "Numenor backend API (Node.js, Express, MongoDB)",
-  "main": "src/server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "build": "tsc -p tsconfig.json",
+    "start": "node --enable-source-maps dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,11 +21,27 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "~7.5.0",
     "mongoose": "^9.9.4",
-    "morgan": "^1.11.0"
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^20.19.43",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
   }
 }

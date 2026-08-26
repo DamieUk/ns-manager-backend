@@ -1,9 +1,9 @@
-const { Router } = require('express');
-const mongoose = require('mongoose');
+import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 
 const router = Router();
 
-router.get('/', (req, res) => {
+router.get('/', (req: Request, res: Response) => {
   const mongoStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
 
   res.json({
@@ -13,4 +13,4 @@ router.get('/', (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;
