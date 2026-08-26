@@ -2,6 +2,7 @@ import { Schema, model, HydratedDocument } from 'mongoose';
 
 export interface IClient {
   name: string;
+  code: string;
   contactName?: string;
   email?: string;
   phone?: string;
@@ -16,6 +17,7 @@ export type ClientDocument = HydratedDocument<IClient>;
 const clientSchema = new Schema<IClient>(
   {
     name: { type: String, required: true, trim: true },
+    code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     contactName: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },

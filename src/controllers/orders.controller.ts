@@ -7,6 +7,7 @@ import { HttpError } from '../utils/HttpError';
 export async function list(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {};
   if (req.query.status) filter.status = req.query.status;
+  if (req.query.client) filter.client = req.query.client;
 
   const orders = await Order.find(filter)
     .populate('client', 'name')
