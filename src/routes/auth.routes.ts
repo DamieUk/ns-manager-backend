@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import session from 'express-session';
-import { startGoogleAuth, handleGoogleCallback, me } from '../controllers/auth.controller';
+import {
+  startGoogleAuth,
+  handleGoogleCallback,
+  me,
+  login,
+  acceptInvite,
+  forgotPassword,
+  resetPassword,
+} from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/requireAuth';
 
 const router = Router();
@@ -22,5 +30,10 @@ router.use(
 router.get('/google', startGoogleAuth);
 router.get('/google/callback', handleGoogleCallback);
 router.get('/me', requireAuth, me);
+
+router.post('/login', login);
+router.post('/accept-invite', acceptInvite);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;

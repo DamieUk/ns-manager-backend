@@ -16,13 +16,13 @@ if (!clientID || !clientSecret || !callbackURL) {
       { clientID, clientSecret, callbackURL },
       async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
         try {
-          const email = profile.emails?.[0]?.value?.toLowerCase();
-          if (!email) {
+          const googleEmail = profile.emails?.[0]?.value?.toLowerCase();
+          if (!googleEmail) {
             done(null, false, { message: 'no_email' });
             return;
           }
 
-          const user = await User.findOne({ email });
+          const user = await User.findOne({ googleEmail });
           if (!user) {
             done(null, false, { message: 'not_invited' });
             return;
@@ -33,11 +33,17 @@ if (!clientID || !clientSecret || !callbackURL) {
             return;
           }
 
+          let dirty = false;
           if (!user.googleId) {
             user.googleId = profile.id;
             user.avatarUrl = profile.photos?.[0]?.value;
-            await user.save();
+            dirty = true;
           }
+          if (!user.emailVerified) {
+            user.emailVerified = true;
+            dirty = true;
+          }
+          if (dirty) await user.save();
 
           done(null, user);
         } catch (err) {

@@ -26,3 +26,15 @@ services:
         sync: false
       - key: JWT_EXPIRES_IN
         value: 12h
+      - key: SMTP_HOST
+        value: mail.spacemail.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        value: damon@numenorsystems.com
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        value: "Numenor Systems <damon@numenorsystems.com>"
