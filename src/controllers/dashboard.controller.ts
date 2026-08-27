@@ -21,7 +21,9 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
   const response = {
     generatedAt: new Date().toISOString(),
-    orders: orders.map((order) => {
+    orders: orders
+      .filter((order) => order.client && order.product)
+      .map((order) => {
       const client = order.client as unknown as { _id: Types.ObjectId; name: string };
       const product = order.product as unknown as { _id: Types.ObjectId; name: string };
       const orderEntries = entriesByOrder.get(order._id.toString()) ?? [];

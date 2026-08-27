@@ -10,6 +10,7 @@ export interface IContract {
   endDate?: Date;
   status: ContractStatus;
   notes?: string;
+  documents: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -24,6 +25,7 @@ const contractSchema = new Schema<IContract>(
     endDate: { type: Date },
     status: { type: String, enum: CONTRACT_STATUSES, default: 'draft' },
     notes: { type: String },
+    documents: { type: [Schema.Types.ObjectId], ref: 'Document', default: [] },
   },
   { timestamps: true }
 );

@@ -1,16 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
-import Document, { DOCUMENT_RELATED_TYPES, DocumentRelatedType } from '../models/document.model';
-import Order from '../models/order.model';
-import Contract from '../models/contract.model';
+import { Types } from 'mongoose';
+import Document from '../models/document.model';
+import Client from '../models/client.model';
 import { HttpError } from '../utils/HttpError';
 import { UPLOAD_DIR } from '../middleware/upload';
+import { documentFromFile } from '../utils/documentFromFile';
 
 export async function list(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {};
-  if (req.query.relatedType) filter.relatedType = req.query.relatedType;
-  if (req.query.relatedId) filter.relatedId = req.query.relatedId;
+  if (req.query.client) filter.client = req.query.client;
 
   const documents = await Document.find(filter).sort({ createdAt: -1 });
   res.json(documents);
@@ -24,7 +24,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function uploadDocument(req: Request, res: Response): Promise<void> {
   const file = req.file;
-  const { relatedType, relatedId } = req.body as { relatedType?: string; relatedId?: string };
+  const { client } = req.body as { client?: string };
 
   const cleanup = () => {
     if (file) fs.unlink(file.path, () => {});
@@ -32,33 +32,18 @@ export async function uploadDocument(req: Request, res: Response): Promise<void>
 
   if (!file) throw new HttpError(400, 'file is required');
 
-  if (!relatedType || !DOCUMENT_RELATED_TYPES.includes(relatedType as DocumentRelatedType)) {
+  if (!client) {
     cleanup();
-    throw new HttpError(400, 'Invalid relatedType');
-  }
-  if (!relatedId) {
-    cleanup();
-    throw new HttpError(400, 'relatedId is required');
+    throw new HttpError(400, 'client is required');
   }
 
-  const safeRelatedType = relatedType as DocumentRelatedType;
-
-  const relatedExists =
-    safeRelatedType === 'Order' ? await Order.exists({ _id: relatedId }) : await Contract.exists({ _id: relatedId });
-  if (!relatedExists) {
+  const clientExists = await Client.exists({ _id: client });
+  if (!clientExists) {
     cleanup();
-    throw new HttpError(400, `${safeRelatedType} does not exist`);
+    throw new HttpError(400, 'client does not exist');
   }
 
-  const document = await Document.create({
-    relatedType: safeRelatedType,
-    relatedId,
-    filename: file.filename,
-    originalName: file.originalname,
-    mimeType: file.mimetype,
-    size: file.size,
-    uploadedBy: req.user!._id,
-  });
+  const document = await Document.create(documentFromFile(file, new Types.ObjectId(client), req.user!._id));
 
   res.status(201).json(document);
 }

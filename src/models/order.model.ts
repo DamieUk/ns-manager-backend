@@ -9,6 +9,7 @@ export interface IOrder {
   quantity: number;
   status: OrderStatus;
   assignedEmployees: Types.ObjectId[];
+  documents: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,6 +23,7 @@ const orderSchema = new Schema<IOrder>(
     quantity: { type: Number, required: true, min: 1 },
     status: { type: String, enum: ORDER_STATUSES, default: 'active' },
     assignedEmployees: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
+    documents: { type: [Schema.Types.ObjectId], ref: 'Document', default: [] },
   },
   { timestamps: true }
 );
