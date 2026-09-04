@@ -38,3 +38,5 @@ services:
         sync: false
       - key: SMTP_FROM
         value: "Numenor Systems <damon@numenorsystems.com>"
+      - key: FIELD_ENCRYPTION_PASSPHRASE
+        sync: false

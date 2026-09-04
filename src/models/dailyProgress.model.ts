@@ -1,4 +1,5 @@
 import { Schema, model, HydratedDocument, Types } from 'mongoose';
+import { encryptField, decryptField } from '../utils/fieldEncryption';
 
 export interface IDailyProgress {
   employee: Types.ObjectId;
@@ -22,9 +23,9 @@ const dailyProgressSchema = new Schema<IDailyProgress>(
     completed: { type: Number, min: 0, default: 0 },
     needsRework: { type: Number, min: 0, default: 0 },
     partiallyAssembled: { type: Number, min: 0, default: 0 },
-    notes: { type: String },
+    notes: { type: String, set: encryptField, get: decryptField },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { getters: true }, toObject: { getters: true } }
 );
 
 dailyProgressSchema.index({ employee: 1, order: 1, date: 1 }, { unique: true });

@@ -1,4 +1,5 @@
 import { Schema, model, HydratedDocument, Types } from 'mongoose';
+import { encryptField, decryptField } from '../utils/fieldEncryption';
 
 export const CONTRACT_STATUSES = ['draft', 'active', 'completed', 'cancelled'] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
@@ -24,10 +25,10 @@ const contractSchema = new Schema<IContract>(
     startDate: { type: Date },
     endDate: { type: Date },
     status: { type: String, enum: CONTRACT_STATUSES, default: 'draft' },
-    notes: { type: String },
+    notes: { type: String, set: encryptField, get: decryptField },
     documents: { type: [Schema.Types.ObjectId], ref: 'Document', default: [] },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { getters: true }, toObject: { getters: true } }
 );
 
 export default model<IContract>('Contract', contractSchema);
