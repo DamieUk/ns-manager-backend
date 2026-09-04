@@ -43,7 +43,7 @@ export async function list(req: Request, res: Response): Promise<void> {
     .populate('employee', 'firstName lastName')
     .populate(ORDER_POPULATE);
 
-  res.json(entries.map(toResponse));
+  res.json(entries.filter((e) => e.employee).map(toResponse));
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {

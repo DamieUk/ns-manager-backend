@@ -2,7 +2,7 @@ import { Schema, model, HydratedDocument } from 'mongoose';
 import { ROLES, PERMISSION_KEYS, PERMISSION_ACTIONS, Role, Permission } from '../constants/permissions';
 import { encryptField, decryptField } from '../utils/fieldEncryption';
 
-export const USER_STATUSES = ['working', 'fired', 'vacation'] as const;
+export const USER_STATUSES = ['working', 'fired', 'vacation', 'deleted'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
 export interface IUser {

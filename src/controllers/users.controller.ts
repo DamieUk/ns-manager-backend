@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User, { USER_STATUSES, UserStatus } from '../models/user.model';
+import DailyProgress from '../models/dailyProgress.model';
 import { HttpError } from '../utils/HttpError';
 import { canManageRole, ROLES, ROLE_DEFAULT_PERMISSIONS, Role, Permission } from '../constants/permissions';
 import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS } from '../utils/authTokens';
@@ -108,7 +109,13 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
   if (address !== undefined) user.address = address;
   if (status !== undefined) {
     if (!USER_STATUSES.includes(status)) throw new HttpError(400, 'Invalid status');
+    const wasDeleted = user.status === 'deleted';
     user.status = status;
+    // Deleting/restoring via status implicitly gates login, unless the caller also sets isActive explicitly.
+    if (isActive === undefined) {
+      if (status === 'deleted') user.isActive = false;
+      else if (wasDeleted) user.isActive = true;
+    }
   }
   if (googleEmail !== undefined) user.googleEmail = googleEmail.toLowerCase();
   if (permissions !== undefined) user.permissions = permissions;
@@ -125,6 +132,13 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
   if (user._id.equals(req.user!._id)) throw new HttpError(400, 'Cannot delete your own account');
   if (!canManageRole(req.user!.role, user.role)) throw new HttpError(403, 'Insufficient role to delete this account');
 
+  // Two-step deletion: mark the account `status: 'deleted'` first (keeps daily-progress history
+  // intact and blocks login) — only a user already in that state can be purged permanently here.
+  if (user.status !== 'deleted') {
+    throw new HttpError(400, 'Set status to "deleted" before permanently deleting this account');
+  }
+
+  await DailyProgress.deleteMany({ employee: user._id });
   await user.deleteOne();
   res.status(204).send();
 }

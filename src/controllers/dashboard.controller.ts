@@ -4,12 +4,16 @@ import Order from '../models/order.model';
 import DailyProgress from '../models/dailyProgress.model';
 
 export async function getDashboard(req: Request, res: Response): Promise<void> {
+  const employeeFilter = typeof req.query.employee === 'string' ? req.query.employee : undefined;
+
   const orders = await Order.find({ status: 'active' }).populate('client', 'name').populate('product', 'name');
   const orderIds = orders.map((o) => o._id);
 
-  const entries = await DailyProgress.find({ order: { $in: orderIds } })
-    .populate('employee', 'firstName lastName')
-    .sort({ date: -1 });
+  const entries = (
+    await DailyProgress.find({ order: { $in: orderIds } })
+      .populate('employee', 'firstName lastName')
+      .sort({ date: -1 })
+  ).filter((e) => e.employee);
 
   const entriesByOrder = new Map<string, typeof entries>();
   for (const entry of entries) {
@@ -37,6 +41,10 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         { completed: 0, needsRework: 0, partiallyAssembled: 0 }
       );
 
+      const visibleEntries = employeeFilter
+        ? orderEntries.filter((e) => (e.employee as unknown as { _id: Types.ObjectId })._id.toString() === employeeFilter)
+        : orderEntries;
+
       return {
         orderId: order._id.toString(),
         product: { id: product._id.toString(), name: product.name },
@@ -46,7 +54,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         status: order.status,
         totals,
         remaining: Math.max(order.quantity - totals.completed, 0),
-        entries: orderEntries.map((e) => {
+        entries: visibleEntries.map((e) => {
           const employee = e.employee as unknown as { _id: Types.ObjectId; firstName: string; lastName: string };
           return {
             id: e._id.toString(),
