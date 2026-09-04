@@ -7,7 +7,7 @@ async function main(): Promise<void> {
   const [, , email, name, googleEmail] = process.argv;
 
   if (!email || !name) {
-    console.error('Usage: tsx src/scripts/seedExecutive.ts <email> <name> [googleEmail]');
+    console.error('Usage: tsx src/scripts/seedExecutive.ts <email> <"First Last"> [googleEmail]');
     console.error('  email       — business/contact email shown in the app');
     console.error('  googleEmail — the Google account used to log in (defaults to <email> if omitted)');
     process.exit(1);
@@ -17,6 +17,8 @@ async function main(): Promise<void> {
   await mongoose.connect(uri);
 
   const resolvedGoogleEmail = (googleEmail || email).toLowerCase();
+  const [firstName, ...rest] = name.trim().split(/\s+/);
+  const lastName = rest.join(' ') || firstName;
 
   const existing = await User.findOne({
     $or: [{ email: email.toLowerCase() }, { googleEmail: resolvedGoogleEmail }],
@@ -28,7 +30,11 @@ async function main(): Promise<void> {
   }
 
   const user = await User.create({
-    name,
+    firstName,
+    lastName,
+    jobTitle: 'Executive',
+    phone: '—',
+    address: '—',
     email,
     googleEmail: resolvedGoogleEmail,
     role: 'executive',

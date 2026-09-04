@@ -8,7 +8,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
   const orderIds = orders.map((o) => o._id);
 
   const entries = await DailyProgress.find({ order: { $in: orderIds } })
-    .populate('employee', 'name')
+    .populate('employee', 'firstName lastName')
     .sort({ date: -1 });
 
   const entriesByOrder = new Map<string, typeof entries>();
@@ -42,14 +42,15 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         product: { id: product._id.toString(), name: product.name },
         client: { id: client._id.toString(), name: client.name },
         quantity: order.quantity,
+        description: order.description,
         status: order.status,
         totals,
         remaining: Math.max(order.quantity - totals.completed, 0),
         entries: orderEntries.map((e) => {
-          const employee = e.employee as unknown as { _id: Types.ObjectId; name: string };
+          const employee = e.employee as unknown as { _id: Types.ObjectId; firstName: string; lastName: string };
           return {
             id: e._id.toString(),
-            employee: { id: employee._id.toString(), name: employee.name },
+            employee: { id: employee._id.toString(), name: `${employee.firstName} ${employee.lastName}` },
             date: e.date,
             completed: e.completed,
             needsRework: e.needsRework,

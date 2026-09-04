@@ -34,10 +34,11 @@ export async function getById(req: Request, res: Response): Promise<void> {
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
-  const { client, product, quantity, status, assignedEmployees, documents } = req.body as {
+  const { client, product, quantity, description, status, assignedEmployees, documents } = req.body as {
     client?: string;
     product?: string;
     quantity?: number;
+    description?: string;
     status?: string;
     assignedEmployees?: string[];
     documents?: string[];
@@ -46,6 +47,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   if (!client) throw new HttpError(400, 'client is required');
   if (!product) throw new HttpError(400, 'product is required');
   if (!quantity || quantity < 1) throw new HttpError(400, 'quantity must be a positive number');
+  if (!description || !description.trim()) throw new HttpError(400, 'description is required');
 
   const [clientExists, productExists] = await Promise.all([
     Client.exists({ _id: client }),
@@ -64,6 +66,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     client,
     product,
     quantity,
+    description,
     status: status as (typeof ORDER_STATUSES)[number] | undefined,
     assignedEmployees,
     documents,
@@ -75,10 +78,11 @@ export async function update(req: Request, res: Response): Promise<void> {
   const order = await Order.findById(req.params.id);
   if (!order) throw new HttpError(404, 'Order not found');
 
-  const { client, product, quantity, status, assignedEmployees, documents } = req.body as {
+  const { client, product, quantity, description, status, assignedEmployees, documents } = req.body as {
     client?: string;
     product?: string;
     quantity?: number;
+    description?: string;
     status?: string;
     assignedEmployees?: string[];
     documents?: string[];
@@ -95,6 +99,10 @@ export async function update(req: Request, res: Response): Promise<void> {
   if (quantity !== undefined) {
     if (quantity < 1) throw new HttpError(400, 'quantity must be a positive number');
     order.quantity = quantity;
+  }
+  if (description !== undefined) {
+    if (!description.trim()) throw new HttpError(400, 'description is required');
+    order.description = description;
   }
   if (status !== undefined) {
     if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) throw new HttpError(400, 'Invalid status');
@@ -126,6 +134,7 @@ function toOrderResponse(order: InstanceType<typeof Order>) {
     client: { id: client._id?.toString(), name: client.name },
     product: { id: product._id?.toString(), name: product.name },
     quantity: order.quantity,
+    description: order.description,
     status: order.status,
   };
 }

@@ -40,14 +40,14 @@ export async function list(req: Request, res: Response): Promise<void> {
 
   const entries = await DailyProgress.find(filter)
     .sort({ date: -1 })
-    .populate('employee', 'name')
+    .populate('employee', 'firstName lastName')
     .populate(ORDER_POPULATE);
 
   res.json(entries.map(toResponse));
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
-  const entry = await DailyProgress.findById(req.params.id).populate('employee', 'name').populate(ORDER_POPULATE);
+  const entry = await DailyProgress.findById(req.params.id).populate('employee', 'firstName lastName').populate(ORDER_POPULATE);
   if (!entry) throw new HttpError(404, 'Entry not found');
 
   const employeeId = (entry.employee as unknown as { _id: Types.ObjectId })._id;
@@ -87,7 +87,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     throw err;
   }
 
-  const populatedEntry = await DailyProgress.findById(created._id).populate('employee', 'name').populate(ORDER_POPULATE);
+  const populatedEntry = await DailyProgress.findById(created._id).populate('employee', 'firstName lastName').populate(ORDER_POPULATE);
   res.status(201).json(toResponse(populatedEntry!));
 }
 
@@ -113,7 +113,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     throw err;
   }
 
-  const populatedEntry = await DailyProgress.findById(entry._id).populate('employee', 'name').populate(ORDER_POPULATE);
+  const populatedEntry = await DailyProgress.findById(entry._id).populate('employee', 'firstName lastName').populate(ORDER_POPULATE);
   res.json(toResponse(populatedEntry!));
 }
 
@@ -127,7 +127,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
 }
 
 function toResponse(entry: DailyProgressDocument) {
-  const employee = entry.employee as unknown as { _id: unknown; name: string };
+  const employee = entry.employee as unknown as { _id: unknown; firstName: string; lastName: string };
   const order = entry.order as unknown as {
     _id: unknown;
     client: { _id: unknown; name: string };
@@ -141,7 +141,7 @@ function toResponse(entry: DailyProgressDocument) {
       client: { id: order.client?._id?.toString(), name: order.client?.name },
       product: { id: order.product?._id?.toString(), name: order.product?.name },
     },
-    employee: { id: employee._id?.toString(), name: employee.name },
+    employee: { id: employee._id?.toString(), name: `${employee.firstName} ${employee.lastName}` },
     date: entry.date,
     completed: entry.completed,
     needsRework: entry.needsRework,

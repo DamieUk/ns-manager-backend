@@ -56,7 +56,7 @@ export function me(req: Request, res: Response): void {
   const user = req.user!;
   res.json({
     id: user._id.toString(),
-    name: user.name,
+    name: `${user.firstName} ${user.lastName}`,
     email: user.email,
     role: user.role,
     permissions: user.permissions,
@@ -141,12 +141,13 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
       user.passwordTokenExpires = tokenExpiryDate(isFirstActivation ? ACTIVATION_TOKEN_TTL_MS : RESET_TOKEN_TTL_MS);
       await user.save();
 
+      const fullName = `${user.firstName} ${user.lastName}`;
       if (isFirstActivation) {
         const url = `${CLIENT_ORIGIN}/accept-invite?token=${raw}`;
-        await sendInviteEmail(user.email, user.name, url);
+        await sendInviteEmail(user.email, fullName, url);
       } else {
         const url = `${CLIENT_ORIGIN}/reset-password?token=${raw}`;
-        await sendPasswordResetEmail(user.email, user.name, url);
+        await sendPasswordResetEmail(user.email, fullName, url);
       }
     }
   } catch (err) {
