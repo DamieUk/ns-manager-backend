@@ -1,9 +1,10 @@
+import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import User, { USER_STATUSES, UserStatus } from '../models/user.model';
 import DailyProgress from '../models/dailyProgress.model';
 import { HttpError } from '../utils/HttpError';
 import { canManageRole, ROLES, ROLE_DEFAULT_PERMISSIONS, Role, Permission } from '../constants/permissions';
-import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS } from '../utils/authTokens';
+import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS, MIN_PASSWORD_LENGTH } from '../utils/authTokens';
 import { sendInviteEmail } from '../config/mailer';
 
 export async function listUsers(req: Request, res: Response): Promise<void> {
@@ -123,6 +124,26 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
 
   await user.save();
   res.json(toUserResponse(user));
+}
+
+export async function setPassword(req: Request, res: Response): Promise<void> {
+  const user = await User.findById(req.params.id);
+  if (!user) throw new HttpError(404, 'User not found');
+
+  if (!canManageRole(req.user!.role, user.role)) throw new HttpError(403, 'Insufficient role to reset this account');
+
+  const { password } = req.body as { password?: string };
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new HttpError(400, `Пароль має містити щонайменше ${MIN_PASSWORD_LENGTH} символів`);
+  }
+
+  user.passwordHash = await bcrypt.hash(password, 10);
+  user.emailVerified = true;
+  user.passwordTokenHash = undefined;
+  user.passwordTokenExpires = undefined;
+  await user.save();
+
+  res.json({ message: 'ok' });
 }
 
 export async function deleteUser(req: Request, res: Response): Promise<void> {
