@@ -10,6 +10,7 @@ export interface IOrder {
   quantity: number;
   description: string;
   status: OrderStatus;
+  dueDate?: Date;
   manager?: Types.ObjectId;
   assignedEmployees: Types.ObjectId[];
   documents: Types.ObjectId[];
@@ -26,6 +27,7 @@ const orderSchema = new Schema<IOrder>(
     quantity: { type: Number, required: true, min: 1 },
     description: { type: String, required: true, set: encryptField, get: decryptField },
     status: { type: String, enum: ORDER_STATUSES, default: 'active' },
+    dueDate: { type: Date },
     manager: { type: Schema.Types.ObjectId, ref: 'User' },
     assignedEmployees: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
     documents: { type: [Schema.Types.ObjectId], ref: 'Document', default: [] },

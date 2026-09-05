@@ -9,8 +9,8 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', requirePermission('ORDERS', 'view'), list);
-router.get('/:id', requirePermission('ORDERS', 'view'), getById);
-router.get('/:id/download', requirePermission('ORDERS', 'view'), download);
+router.get('/:id', getById);
+router.get('/:id/download', download);
 router.post('/', requirePermission('ORDERS', 'modify'), upload.single('file'), uploadDocument);
 router.delete('/:id', requirePermission('ORDERS', 'modify'), remove);
 

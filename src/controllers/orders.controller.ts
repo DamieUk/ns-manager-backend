@@ -4,7 +4,9 @@ import Client from '../models/client.model';
 import Product from '../models/product.model';
 import Document from '../models/document.model';
 import User from '../models/user.model';
+import DailyProgress from '../models/dailyProgress.model';
 import { HttpError } from '../utils/HttpError';
+import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 
 const MANAGER_ROLES = ['executive', 'manager'];
 
@@ -34,6 +36,7 @@ export async function list(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {};
   if (req.query.status) filter.status = req.query.status;
   if (req.query.client) filter.client = req.query.client;
+  if (req.user!.role === 'employee') filter.assignedEmployees = req.user!._id;
 
   const orders = await Order.find(filter)
     .populate('client', 'name')
@@ -51,20 +54,65 @@ export async function getById(req: Request, res: Response): Promise<void> {
     .populate(ASSIGNMENT_POPULATE)
     .populate('documents');
   if (!order || !order.client || !order.product) throw new HttpError(404, 'Order not found');
+
+  if (req.user!.role === 'employee' && !order.assignedEmployees.some((id) => id.equals(req.user!._id))) {
+    throw new HttpError(403, 'You are not assigned to this order');
+  }
+
   res.json(toOrderDetailResponse(order));
 }
 
+export async function listMine(req: Request, res: Response): Promise<void> {
+  const orders = await Order.find({ assignedEmployees: req.user!._id })
+    .populate('client', 'name')
+    .populate('product', 'name')
+    .sort({ dueDate: 1, createdAt: -1 });
+
+  const orderIds = orders.map((o) => o._id);
+  const entries = await DailyProgress.find({ order: { $in: orderIds } });
+  const completedByOrder = new Map<string, number>();
+  for (const entry of entries) {
+    const key = entry.order.toString();
+    completedByOrder.set(key, (completedByOrder.get(key) ?? 0) + entry.completed);
+  }
+
+  const now = new Date();
+  const response = orders
+    .filter((order) => order.client && order.product)
+    .map((order) => {
+      const client = order.client as unknown as { _id: unknown; name: string };
+      const product = order.product as unknown as { _id: unknown; name: string };
+      const completed = completedByOrder.get(order._id.toString()) ?? 0;
+      const remaining = Math.max(order.quantity - completed, 0);
+      return {
+        id: order._id.toString(),
+        client: { id: client._id?.toString(), name: client.name },
+        product: { id: product._id?.toString(), name: product.name },
+        quantity: order.quantity,
+        status: order.status,
+        dueDate: order.dueDate ?? null,
+        completed,
+        remaining,
+        isOverdue: Boolean(order.dueDate) && order.dueDate! < now && order.status === 'active',
+      };
+    });
+
+  res.json(response);
+}
+
 export async function create(req: Request, res: Response): Promise<void> {
-  const { client, product, quantity, description, status, manager, assignedEmployees, documents } = req.body as {
-    client?: string;
-    product?: string;
-    quantity?: number;
-    description?: string;
-    status?: string;
-    manager?: string | null;
-    assignedEmployees?: string[];
-    documents?: string[];
-  };
+  const { client, product, quantity, description, status, dueDate, manager, assignedEmployees, documents } =
+    req.body as {
+      client?: string;
+      product?: string;
+      quantity?: number;
+      description?: string;
+      status?: string;
+      dueDate?: string | null;
+      manager?: string | null;
+      assignedEmployees?: string[];
+      documents?: string[];
+    };
 
   if (!client) throw new HttpError(400, 'client is required');
   if (!product) throw new HttpError(400, 'product is required');
@@ -92,6 +140,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     quantity,
     description,
     status: status as (typeof ORDER_STATUSES)[number] | undefined,
+    dueDate: dueDate ? normalizeToUTCMidnight(dueDate) : undefined,
     manager: manager || undefined,
     assignedEmployees,
     documents,
@@ -104,16 +153,18 @@ export async function update(req: Request, res: Response): Promise<void> {
   const order = await Order.findById(req.params.id);
   if (!order) throw new HttpError(404, 'Order not found');
 
-  const { client, product, quantity, description, status, manager, assignedEmployees, documents } = req.body as {
-    client?: string;
-    product?: string;
-    quantity?: number;
-    description?: string;
-    status?: string;
-    manager?: string | null;
-    assignedEmployees?: string[];
-    documents?: string[];
-  };
+  const { client, product, quantity, description, status, dueDate, manager, assignedEmployees, documents } =
+    req.body as {
+      client?: string;
+      product?: string;
+      quantity?: number;
+      description?: string;
+      status?: string;
+      dueDate?: string | null;
+      manager?: string | null;
+      assignedEmployees?: string[];
+      documents?: string[];
+    };
 
   if (client !== undefined) {
     if (!(await Client.exists({ _id: client }))) throw new HttpError(400, 'client does not exist');
@@ -134,6 +185,9 @@ export async function update(req: Request, res: Response): Promise<void> {
   if (status !== undefined) {
     if (!ORDER_STATUSES.includes(status as (typeof ORDER_STATUSES)[number])) throw new HttpError(400, 'Invalid status');
     order.status = status as (typeof ORDER_STATUSES)[number];
+  }
+  if (dueDate !== undefined) {
+    order.dueDate = dueDate ? normalizeToUTCMidnight(dueDate) : undefined;
   }
   if (manager !== undefined) {
     if (manager) await assertValidManager(manager);
@@ -177,6 +231,7 @@ function toOrderResponse(order: InstanceType<typeof Order>) {
     quantity: order.quantity,
     description: order.description,
     status: order.status,
+    dueDate: order.dueDate ?? null,
     manager: manager ? { id: manager._id?.toString(), name: `${manager.firstName} ${manager.lastName}` } : null,
     assignedEmployees: (assignedEmployees ?? [])
       .filter((e) => e && e._id)

@@ -62,6 +62,8 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         quantity: order.quantity,
         description: order.description,
         status: order.status,
+        dueDate: order.dueDate ?? null,
+        isOverdue: Boolean(order.dueDate) && order.dueDate! < new Date() && order.status === 'active',
         manager: manager ? { id: manager._id.toString(), name: `${manager.firstName} ${manager.lastName}` } : null,
         assignedEmployees: (assignedEmployees ?? [])
           .filter((e) => e && e._id)

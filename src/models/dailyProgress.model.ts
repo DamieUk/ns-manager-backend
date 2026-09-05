@@ -9,6 +9,7 @@ export interface IDailyProgress {
   needsRework: number;
   partiallyAssembled: number;
   notes?: string;
+  photo?: Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -24,6 +25,7 @@ const dailyProgressSchema = new Schema<IDailyProgress>(
     needsRework: { type: Number, min: 0, default: 0 },
     partiallyAssembled: { type: Number, min: 0, default: 0 },
     notes: { type: String, set: encryptField, get: decryptField },
+    photo: { type: Schema.Types.ObjectId, ref: 'Document' },
   },
   { timestamps: true, toJSON: { getters: true }, toObject: { getters: true } }
 );

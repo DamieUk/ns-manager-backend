@@ -2,11 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import Document from '../models/document.model';
+import Document, { DocumentDocument } from '../models/document.model';
 import Client from '../models/client.model';
 import { HttpError } from '../utils/HttpError';
 import { UPLOAD_DIR } from '../middleware/upload';
 import { documentFromFile } from '../utils/documentFromFile';
+import { ACTION_RANK } from '../constants/permissions';
+
+// Anyone with ORDERS:view can browse the shared client document pool. An employee without
+// that permission can still fetch a document they uploaded themselves (e.g. a photo attached
+// to their own daily-progress report) — narrowly scoped to their own uploads only.
+function canAccessDocument(req: Request, document: DocumentDocument): boolean {
+  const entry = req.user!.permissions.find((p) => p.key === 'ORDERS');
+  const actual = entry?.action ?? 'none';
+  if (ACTION_RANK[actual] >= ACTION_RANK.view) return true;
+  return document.uploadedBy.equals(req.user!._id);
+}
 
 export async function list(req: Request, res: Response): Promise<void> {
   const filter: Record<string, unknown> = {};
@@ -19,6 +30,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 export async function getById(req: Request, res: Response): Promise<void> {
   const document = await Document.findById(req.params.id);
   if (!document) throw new HttpError(404, 'Document not found');
+  if (!canAccessDocument(req, document)) throw new HttpError(403, 'Requires ORDERS:view permission');
   res.json(document);
 }
 
@@ -51,6 +63,7 @@ export async function uploadDocument(req: Request, res: Response): Promise<void>
 export async function download(req: Request, res: Response): Promise<void> {
   const document = await Document.findById(req.params.id);
   if (!document) throw new HttpError(404, 'Document not found');
+  if (!canAccessDocument(req, document)) throw new HttpError(403, 'Requires ORDERS:view permission');
 
   const filePath = path.join(UPLOAD_DIR, document.filename);
   if (!fs.existsSync(filePath)) throw new HttpError(404, 'File missing on disk');
