@@ -1,9 +1,13 @@
 import { Schema, model, HydratedDocument } from 'mongoose';
 import { encryptField, decryptField } from '../utils/fieldEncryption';
 
+export const CLIENT_STATUSES = ['active', 'deleted'] as const;
+export type ClientStatus = (typeof CLIENT_STATUSES)[number];
+
 export interface IClient {
   name: string;
   code: string;
+  status: ClientStatus;
   contactName?: string;
   email?: string;
   phone?: string;
@@ -19,6 +23,7 @@ const clientSchema = new Schema<IClient>(
   {
     name: { type: String, required: true, trim: true },
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
+    status: { type: String, enum: CLIENT_STATUSES, required: true, default: 'active' },
     contactName: {
       type: String,
       set: (v?: string) => encryptField(v?.trim()),

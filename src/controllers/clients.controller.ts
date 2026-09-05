@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
-import Client from '../models/client.model';
+import Client, { CLIENT_STATUSES } from '../models/client.model';
 import Contract from '../models/contract.model';
 import Document from '../models/document.model';
 import Order from '../models/order.model';
@@ -85,13 +85,17 @@ export async function update(req: Request, res: Response): Promise<void> {
   const client = await Client.findById(req.params.id);
   if (!client) throw new HttpError(404, 'Client not found');
 
-  const { name, contactName, email, phone, address, notes } = req.body;
+  const { name, contactName, email, phone, address, notes, status } = req.body;
   if (name !== undefined) client.name = name;
   if (contactName !== undefined) client.contactName = contactName;
   if (email !== undefined) client.email = email;
   if (phone !== undefined) client.phone = phone;
   if (address !== undefined) client.address = address;
   if (notes !== undefined) client.notes = notes;
+  if (status !== undefined) {
+    if (!CLIENT_STATUSES.includes(status)) throw new HttpError(400, 'Invalid status');
+    client.status = status;
+  }
 
   await client.save();
   res.json(client);
@@ -100,6 +104,13 @@ export async function update(req: Request, res: Response): Promise<void> {
 export async function remove(req: Request, res: Response): Promise<void> {
   const client = await Client.findById(req.params.id);
   if (!client) throw new HttpError(404, 'Client not found');
+
+  // Two-step deletion: mark the client `status: 'deleted'` first (keeps its orders/products/
+  // contracts/documents intact for history) — only a client already in that state can be
+  // purged permanently here.
+  if (client.status !== 'deleted') {
+    throw new HttpError(400, 'Set status to "deleted" before permanently deleting this client');
+  }
 
   const documents = await Document.find({ client: client._id });
 

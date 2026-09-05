@@ -6,7 +6,11 @@ import DailyProgress from '../models/dailyProgress.model';
 export async function getDashboard(req: Request, res: Response): Promise<void> {
   const employeeFilter = typeof req.query.employee === 'string' ? req.query.employee : undefined;
 
-  const orders = await Order.find({ status: 'active' }).populate('client', 'name').populate('product', 'name');
+  const orders = await Order.find({ status: 'active' })
+    .populate('client', 'name')
+    .populate('product', 'name')
+    .populate('manager', 'firstName lastName')
+    .populate('assignedEmployees', 'firstName lastName');
   const orderIds = orders.map((o) => o._id);
 
   const entries = (
@@ -30,6 +34,12 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
       .map((order) => {
       const client = order.client as unknown as { _id: Types.ObjectId; name: string };
       const product = order.product as unknown as { _id: Types.ObjectId; name: string };
+      const manager = order.manager as unknown as { _id: Types.ObjectId; firstName: string; lastName: string } | undefined;
+      const assignedEmployees = order.assignedEmployees as unknown as Array<{
+        _id: Types.ObjectId;
+        firstName: string;
+        lastName: string;
+      }>;
       const orderEntries = entriesByOrder.get(order._id.toString()) ?? [];
 
       const totals = orderEntries.reduce(
@@ -52,6 +62,10 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         quantity: order.quantity,
         description: order.description,
         status: order.status,
+        manager: manager ? { id: manager._id.toString(), name: `${manager.firstName} ${manager.lastName}` } : null,
+        assignedEmployees: (assignedEmployees ?? [])
+          .filter((e) => e && e._id)
+          .map((e) => ({ id: e._id.toString(), name: `${e.firstName} ${e.lastName}` })),
         totals,
         remaining: Math.max(order.quantity - totals.completed, 0),
         entries: visibleEntries.map((e) => {
