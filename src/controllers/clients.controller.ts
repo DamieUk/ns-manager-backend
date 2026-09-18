@@ -1,14 +1,12 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response } from 'express';
 import Client, { CLIENT_STATUSES } from '../models/client.model';
 import Contract from '../models/contract.model';
-import Document from '../models/document.model';
+import Document, { DocumentDocument } from '../models/document.model';
 import Order from '../models/order.model';
 import Product from '../models/product.model';
 import { HttpError } from '../utils/HttpError';
 import { documentFromFile } from '../utils/documentFromFile';
-import { UPLOAD_DIR } from '../middleware/upload';
+import { deleteFromStorage } from '../config/storage';
 
 type MulterFields = { contract?: Express.Multer.File[]; documents?: Express.Multer.File[] };
 
@@ -42,26 +40,24 @@ export async function create(req: Request, res: Response): Promise<void> {
   const files = req.files as MulterFields | undefined;
   const contractFile = files?.contract?.[0];
   const supportingFiles = files?.documents ?? [];
-  const allUploadedFiles = [...(contractFile ? [contractFile] : []), ...supportingFiles];
 
-  const fail = (status: number, message: string): never => {
-    allUploadedFiles.forEach((f) => fs.unlink(f.path, () => {}));
-    throw new HttpError(status, message);
-  };
-
-  if (!name || !code) fail(400, 'name and code are required');
-  if (!contractFile) fail(400, 'contract PDF file is required');
-  if (contractFile!.mimetype !== 'application/pdf') fail(400, 'contract must be a PDF file');
+  if (!name || !code) throw new HttpError(400, 'name and code are required');
+  if (!contractFile) throw new HttpError(400, 'contract PDF file is required');
+  if (contractFile.mimetype !== 'application/pdf') throw new HttpError(400, 'contract must be a PDF file');
 
   let client;
   let contract;
+  const uploadedDocs: DocumentDocument[] = [];
   try {
     client = await Client.create({ name, code, contactName, email, phone, address, notes });
 
-    const contractDoc = await Document.create(documentFromFile(contractFile!, client._id, req.user!._id));
-    const supportingDocs = [];
+    const contractDoc = await Document.create(await documentFromFile(contractFile, client._id, req.user!._id));
+    uploadedDocs.push(contractDoc);
+    const supportingDocs: DocumentDocument[] = [];
     for (const file of supportingFiles) {
-      supportingDocs.push(await Document.create(documentFromFile(file, client._id, req.user!._id)));
+      const doc = await Document.create(await documentFromFile(file, client._id, req.user!._id));
+      uploadedDocs.push(doc);
+      supportingDocs.push(doc);
     }
 
     contract = await Contract.create({
@@ -71,7 +67,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       documents: [contractDoc._id, ...supportingDocs.map((d) => d._id)],
     });
   } catch (err) {
-    allUploadedFiles.forEach((f) => fs.unlink(f.path, () => {}));
+    uploadedDocs.forEach((doc) => deleteFromStorage(doc.filename).catch(() => {}));
     if (client) await Document.deleteMany({ client: client._id });
     if (contract) await contract.deleteOne();
     if (client) await client.deleteOne();
@@ -120,7 +116,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
   await Document.deleteMany({ client: client._id });
   await client.deleteOne();
 
-  documents.forEach((doc) => fs.unlink(path.join(UPLOAD_DIR, doc.filename), () => {}));
+  documents.forEach((doc) => deleteFromStorage(doc.filename).catch(() => {}));
 
   res.status(204).send();
 }

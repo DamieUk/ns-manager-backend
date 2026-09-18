@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import { MongoServerError } from 'mongodb';
@@ -9,7 +7,7 @@ import Document from '../models/document.model';
 import { HttpError } from '../utils/HttpError';
 import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 import { documentFromFile } from '../utils/documentFromFile';
-import { UPLOAD_DIR } from '../middleware/upload';
+import { deleteFromStorage } from '../config/storage';
 
 const MANAGEMENT_ROLES = ['executive', 'manager'];
 
@@ -75,23 +73,18 @@ export async function create(req: Request, res: Response): Promise<void> {
   const { order, completed, needsRework, notes } = req.body as Record<string, string | undefined>;
   const file = req.file;
 
-  const fail = (status: number, message: string): never => {
-    if (file) fs.unlink(file.path, () => {});
-    throw new HttpError(status, message);
-  };
-
-  if (!order) fail(400, 'order is required');
+  if (!order) throw new HttpError(400, 'order is required');
 
   const orderDoc = await Order.findById(order);
-  if (!orderDoc) fail(400, 'order does not exist');
-  if (orderDoc!.status !== 'active') fail(400, 'order is not active');
-  if (!isAssignedToOrder(orderDoc!, req.user!._id)) fail(403, 'You are not assigned to this order');
+  if (!orderDoc) throw new HttpError(400, 'order does not exist');
+  if (orderDoc.status !== 'active') throw new HttpError(400, 'order is not active');
+  if (!isAssignedToOrder(orderDoc, req.user!._id)) throw new HttpError(403, 'You are not assigned to this order');
 
   const normalizedDate = normalizeToUTCMidnight(new Date().toISOString());
 
   let photoId: Types.ObjectId | undefined;
   if (file) {
-    const photoDoc = await Document.create(documentFromFile(file, orderDoc!.client, req.user!._id));
+    const photoDoc = await Document.create(await documentFromFile(file, orderDoc.client, req.user!._id));
     photoId = photoDoc._id;
   }
 
@@ -137,17 +130,16 @@ export async function update(req: Request, res: Response): Promise<void> {
   if (file) {
     if (entry.photo) {
       const oldPhoto = await Document.findByIdAndDelete(entry.photo);
-      if (oldPhoto) fs.unlink(path.join(UPLOAD_DIR, oldPhoto.filename), () => {});
+      if (oldPhoto) deleteFromStorage(oldPhoto.filename).catch(() => {});
     }
     const orderDoc = await Order.findById(entry.order);
-    const photoDoc = await Document.create(documentFromFile(file, orderDoc!.client, req.user!._id));
+    const photoDoc = await Document.create(await documentFromFile(file, orderDoc!.client, req.user!._id));
     entry.photo = photoDoc._id;
   }
 
   try {
     await entry.save();
   } catch (err) {
-    if (file) fs.unlink(file.path, () => {});
     if (err instanceof MongoServerError && err.code === 11000) {
       throw new HttpError(409, 'Entry already exists for this order/date');
     }
@@ -168,7 +160,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
 
   if (entry.photo) {
     const photoDoc = await Document.findByIdAndDelete(entry.photo);
-    if (photoDoc) fs.unlink(path.join(UPLOAD_DIR, photoDoc.filename), () => {});
+    if (photoDoc) deleteFromStorage(photoDoc.filename).catch(() => {});
   }
 
   await entry.deleteOne();

@@ -1,11 +1,9 @@
-import fs from 'fs';
-import path from 'path';
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import Document, { DocumentDocument } from '../models/document.model';
 import Client from '../models/client.model';
 import { HttpError } from '../utils/HttpError';
-import { UPLOAD_DIR } from '../middleware/upload';
+import { deleteFromStorage, readFromStorage } from '../config/storage';
 import { documentFromFile } from '../utils/documentFromFile';
 import { ACTION_RANK } from '../constants/permissions';
 
@@ -38,24 +36,13 @@ export async function uploadDocument(req: Request, res: Response): Promise<void>
   const file = req.file;
   const { client } = req.body as { client?: string };
 
-  const cleanup = () => {
-    if (file) fs.unlink(file.path, () => {});
-  };
-
   if (!file) throw new HttpError(400, 'file is required');
-
-  if (!client) {
-    cleanup();
-    throw new HttpError(400, 'client is required');
-  }
+  if (!client) throw new HttpError(400, 'client is required');
 
   const clientExists = await Client.exists({ _id: client });
-  if (!clientExists) {
-    cleanup();
-    throw new HttpError(400, 'client does not exist');
-  }
+  if (!clientExists) throw new HttpError(400, 'client does not exist');
 
-  const document = await Document.create(documentFromFile(file, new Types.ObjectId(client), req.user!._id));
+  const document = await Document.create(await documentFromFile(file, new Types.ObjectId(client), req.user!._id));
 
   res.status(201).json(document);
 }
@@ -65,10 +52,17 @@ export async function download(req: Request, res: Response): Promise<void> {
   if (!document) throw new HttpError(404, 'Document not found');
   if (!canAccessDocument(req, document)) throw new HttpError(403, 'Requires ORDERS:view permission');
 
-  const filePath = path.join(UPLOAD_DIR, document.filename);
-  if (!fs.existsSync(filePath)) throw new HttpError(404, 'File missing on disk');
+  let object;
+  try {
+    object = await readFromStorage(document.filename);
+  } catch {
+    throw new HttpError(404, 'File missing in storage');
+  }
 
-  res.download(filePath, document.originalName);
+  res.setHeader('Content-Type', object.contentType || document.mimeType);
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(document.originalName)}"`);
+  if (object.contentLength) res.setHeader('Content-Length', object.contentLength);
+  object.body.pipe(res);
 }
 
 export async function remove(req: Request, res: Response): Promise<void> {
@@ -76,6 +70,6 @@ export async function remove(req: Request, res: Response): Promise<void> {
   if (!document) throw new HttpError(404, 'Document not found');
 
   await document.deleteOne();
-  fs.unlink(path.join(UPLOAD_DIR, document.filename), () => {});
+  deleteFromStorage(document.filename).catch(() => {});
   res.status(204).send();
 }

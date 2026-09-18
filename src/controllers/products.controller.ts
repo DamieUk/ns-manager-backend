@@ -1,11 +1,11 @@
-import fs from 'fs';
 import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import Client from '../models/client.model';
-import Document from '../models/document.model';
+import Document, { DocumentDocument } from '../models/document.model';
 import Product, { PRODUCT_TYPES, ProductType } from '../models/product.model';
 import { HttpError } from '../utils/HttpError';
 import { documentFromFile } from '../utils/documentFromFile';
+import { deleteFromStorage } from '../config/storage';
 
 type MulterFields = { bomFile?: Express.Multer.File[]; additionalFiles?: Express.Multer.File[] };
 
@@ -35,28 +35,28 @@ export async function create(req: Request, res: Response): Promise<void> {
   const files = req.files as MulterFields | undefined;
   const bomFile = files?.bomFile?.[0];
   const additionalFiles = files?.additionalFiles ?? [];
-  const allUploadedFiles = [...(bomFile ? [bomFile] : []), ...additionalFiles];
 
-  const fail = (status: number, message: string): never => {
-    allUploadedFiles.forEach((f) => fs.unlink(f.path, () => {}));
-    throw new HttpError(status, message);
-  };
-
-  if (!name || !sku || !type || !client) fail(400, 'name, sku, type and client are required');
-  if (!PRODUCT_TYPES.includes(type as ProductType)) fail(400, 'Invalid type');
-  if (type === 'PCB' && !bomFile) fail(400, 'bomFile is required for PCB products');
+  if (!name || !sku || !type || !client) throw new HttpError(400, 'name, sku, type and client are required');
+  if (!PRODUCT_TYPES.includes(type as ProductType)) throw new HttpError(400, 'Invalid type');
+  if (type === 'PCB' && !bomFile) throw new HttpError(400, 'bomFile is required for PCB products');
 
   const clientExists = await Client.exists({ _id: client });
-  if (!clientExists) fail(400, 'client does not exist');
+  if (!clientExists) throw new HttpError(400, 'client does not exist');
 
   const clientObjectId = new Types.ObjectId(client);
 
   let product;
+  const uploadedDocs: DocumentDocument[] = [];
   try {
-    const bomDoc = bomFile ? await Document.create(documentFromFile(bomFile, clientObjectId, req.user!._id)) : null;
-    const additionalDocs = [];
+    const bomDoc = bomFile
+      ? await Document.create(await documentFromFile(bomFile, clientObjectId, req.user!._id))
+      : null;
+    if (bomDoc) uploadedDocs.push(bomDoc);
+    const additionalDocs: DocumentDocument[] = [];
     for (const file of additionalFiles) {
-      additionalDocs.push(await Document.create(documentFromFile(file, clientObjectId, req.user!._id)));
+      const doc = await Document.create(await documentFromFile(file, clientObjectId, req.user!._id));
+      uploadedDocs.push(doc);
+      additionalDocs.push(doc);
     }
 
     product = await Product.create({
@@ -69,7 +69,8 @@ export async function create(req: Request, res: Response): Promise<void> {
       additionalFiles: additionalDocs.map((d) => d._id),
     });
   } catch (err) {
-    allUploadedFiles.forEach((f) => fs.unlink(f.path, () => {}));
+    uploadedDocs.forEach((doc) => deleteFromStorage(doc.filename).catch(() => {}));
+    await Document.deleteMany({ _id: { $in: uploadedDocs.map((d) => d._id) } });
     if (product) await product.deleteOne();
     throw err;
   }
