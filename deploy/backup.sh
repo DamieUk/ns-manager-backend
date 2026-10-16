@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Backs up the MySQL database and all uploaded files into $BACKUP_DIR/<timestamp>/, keeping the
 # last $KEEP_DAYS days. Uploads are snapshotted with rsync --link-dest: files unchanged since the
-# previous backup become hard links, so each day only costs the space of new files.
-# Run nightly from cron on the server, e.g.:
-#   15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
+# previous backup become hard links, so each backup only costs the space of new files.
+# Run from cron on the server, e.g. weekly (Sundays 03:15 UTC) keeping four weeks:
+#   15 3 * * 0 KEEP_DAYS=28 /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 set -euo pipefail
 umask 077 # dumps hold password hashes and encrypted fields: root-only
 

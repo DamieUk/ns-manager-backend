@@ -158,11 +158,11 @@ cd ~/numenor-api && node dist/scripts/seedExecutive.js "damon@numenorsystems.com
 `.htaccess` (у File Manager — Settings → Show Hidden Files). Відкрити `https://<домен>`.
 
 **8. Бекапи.** Найпростіше — cPanel → Backup: повний бекап акаунта містить і базу, і
-`numenor-uploads`; регулярно завантажувати його собі. Автоматично — cPanel → Cron Jobs, щоночі
-(доступ до бази — у файлі `~/.my.cnf` з правами 600: `[client]` / `user=…` / `password=…`):
+`numenor-uploads`; регулярно завантажувати його собі. Автоматично — cPanel → Cron Jobs, наприклад
+щотижня (доступ до бази — у файлі `~/.my.cnf` з правами 600: `[client]` / `user=…` / `password=…`):
 
 ```bash
-mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-transaction --no-tablespaces <cpuser>_numenor | gzip > ~/backups/db-$(date +\%F).sql.gz && tar -czf ~/backups/uploads-$(date +\%F).tar.gz -C ~ numenor-uploads && find ~/backups -mtime +14 -delete
+mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-transaction --no-tablespaces <cpuser>_numenor | gzip > ~/backups/db-$(date +\%F).sql.gz && tar -czf ~/backups/uploads-$(date +\%F).tar.gz -C ~ numenor-uploads && find ~/backups -mtime +28 -delete
 ```
 
 Бекап на тому ж хостингу не захищає від втрати акаунта — копії варто періодично забирати собі.
@@ -237,14 +237,14 @@ curl https://<DOMAIN>/api/health       # "database":"connected"
 docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Ім'я Прізвище"
 ```
 
-**6. Бекапи.** Щоночі о 03:15, зберігаються 14 днів у `/var/backups/numenor/<дата>/`: дамп бази
-(`db.sql.gz`) і знімок файлів (`uploads/`). Знімки інкрементальні — файли, що не змінились з
-попереднього бекапу, є жорсткими посиланнями, тож 14 днів історії займають місце приблизно однієї
-копії плюс нові файли.
+**6. Бекапи.** Щонеділі о 03:15 UTC, зберігаються 4 тижні у `/var/backups/numenor/<дата>/`: дамп
+бази (`db.sql.gz`) і знімок файлів (`uploads/`). Знімки інкрементальні — файли, що не змінились з
+попереднього бекапу, є жорсткими посиланнями, тож уся історія займає місце приблизно однієї копії
+плюс нові файли. Частіше — змінити розклад у cron (наприклад `15 3 * * *` — щодня).
 
 ```bash
 crontab -e
-15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
+15 3 * * 0 KEEP_DAYS=28 /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 ```
 
 Бекап на тому ж сервері не захищає від втрати сервера — копіювати `/var/backups/numenor` ще
