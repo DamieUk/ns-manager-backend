@@ -142,30 +142,40 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
     vatNumber: '123456789012',
     signatory: 'Директор Коваль І. І.',
   };
-  const c4 = rec('create client without papers', await exec.req('POST', '/clients', {
-    form: form({ name: 'Omega Devices', code: 'omg-04', ...requisites }),
+  const nda = (name: string, signedAt = day(-60)) => ({ fields: { ndaSignedAt: signedAt }, files: { nda: [pdf(name)] } });
+  rec('create client without NDA', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1' }) }));
+  rec('create client NDA without signing date', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1' }, { nda: [pdf('nda-x.pdf')] }) }));
+  rec('create client NDA with bad date', await exec.req('POST', '/clients', {
+    form: form({ name: 'X', code: 'X-1', ndaSignedAt: 'yesterday' }, { nda: [pdf('nda-x.pdf')] }),
+  }));
+  const omegaNda = nda('nda-omega.jpg', day(-10));
+  const c4 = rec('create client with signed NDA', await exec.req('POST', '/clients', {
+    form: form({ name: 'Omega Devices', code: 'omg-04', ndaNumber: ' 3/26 ', ...omegaNda.fields, ...requisites }, { nda: [upload(Buffer.from([0xff, 0xd8, 0xff, 1]), 'image/jpeg', 'nda-omega.jpg')] }),
   }))._id;
-  rec('create client invalid EDRPOU', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', edrpou: '123' }) }));
-  rec('create client invalid IBAN', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', iban: 'DE89370400440532013000' }) }));
-  rec('create client invalid VAT number', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', vatNumber: 'abc' }) }));
-  rec('create client contract not pdf', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1' }, { contract: [png('c.png')] }) }));
+  rec('create client invalid EDRPOU', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', edrpou: '123', ...nda('n.pdf').fields }, nda('n.pdf').files) }));
+  rec('create client invalid IBAN', await exec.req('POST', '/clients', {
+    form: form({ name: 'X', code: 'X-1', iban: 'DE89370400440532013000', ...nda('n.pdf').fields }, nda('n.pdf').files),
+  }));
+  rec('create client invalid VAT number', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', vatNumber: 'abc', ...nda('n.pdf').fields }, nda('n.pdf').files) }));
+  note('uploads after rejected clients', await uploadsCount());
+  rec('create client contract not pdf', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', ...nda('n.pdf').fields }, { ...nda('n.pdf').files, contract: [png('c.png')] }) }));
   rec('create client missing code', await exec.req('POST', '/clients', { form: form({ name: 'X' }, { contract: [pdf('c.pdf')] }) }));
   const c1 = rec('create client borysfen', await exec.req('POST', '/clients', {
     form: form(
-      { name: '  Борисфен Електронікс ', code: ' bor-01 ', contactName: ' Андрій ', email: ' Info@Borysfen.UA ', phone: '+380 44 222', address: 'Київ', notes: 'VIP клієнт', contractTitle: 'Рамковий договір' },
-      { contract: [pdf('contract-borysfen.pdf')], documents: [pdf('spec-a.pdf'), png('drawing.png')] }
+      { name: '  Борисфен Електронікс ', code: ' bor-01 ', contactName: ' Андрій ', email: ' Info@Borysfen.UA ', phone: '+380 44 222', address: 'Київ', notes: 'VIP клієнт', contractTitle: 'Рамковий договір', ...nda('nda-borysfen-2025.pdf').fields },
+      { ...nda('nda-borysfen-2025.pdf').files, contract: [pdf('contract-borysfen.pdf')], documents: [pdf('spec-a.pdf'), png('drawing.png')] }
     ),
   }))._id;
   await tick();
   const c2 = rec('create client alpha', await exec.req('POST', '/clients', {
-    form: form({ name: 'alpha systems', code: 'ALP-02' }, { contract: [pdf('contract-alpha.pdf')] }),
+    form: form({ name: 'alpha systems', code: 'ALP-02', ...nda('nda-alpha.pdf').fields }, { ...nda('nda-alpha.pdf').files, contract: [pdf('contract-alpha.pdf')] }),
   }))._id;
   await tick();
   const c3 = rec('create client zeta', await exec.req('POST', '/clients', {
-    form: form({ name: 'Zeta Labs', code: 'zet-03', email: 'hello@zeta.io' }, { contract: [pdf('contract-zeta.pdf')] }),
+    form: form({ name: 'Zeta Labs', code: 'zet-03', email: 'hello@zeta.io', ...nda('nda-zeta.pdf').fields }, { ...nda('nda-zeta.pdf').files, contract: [pdf('contract-zeta.pdf')] }),
   }))._id;
   rec('create client duplicate code', await exec.req('POST', '/clients', {
-    form: form({ name: 'Dup', code: 'BOR-01' }, { contract: [pdf('contract-dup.pdf')] }),
+    form: form({ name: 'Dup', code: 'BOR-01', ...nda('nda-dup.pdf').fields }, { ...nda('nda-dup.pdf').files, contract: [pdf('contract-dup.pdf')] }),
   }));
   note('uploads after clients', await uploadsCount());
   rec('list clients', await exec.req('GET', '/clients'));
@@ -194,11 +204,11 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   const k0 = rec('create framework contract without title', await exec.req('POST', '/contracts', {
     json: { client: c4, type: 'framework', number: '12/2026' },
   }))._id;
-  rec('omega papers before signing', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
+  rec('omega papers before framework is signed', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
   rec('mark framework contract signed with scan', await exec.req('PUT', `/contracts/${k0}`, {
     form: form({ signedAt: day(-2) }, { files: [pdf('framework-omega-signed.pdf')] }),
   }));
-  rec('omega papers after signing', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
+  rec('omega papers after framework is signed', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
   rec('borysfen papers', await exec.req('GET', `/clients/${c1}`), (r) => (r.data as Body).papers);
   rec('list clients with papers', await exec.req('GET', '/clients'));
   rec('create contract unknown client', await exec.req('POST', '/contracts', { json: { title: 'X', client: UNKNOWN_ID } }));

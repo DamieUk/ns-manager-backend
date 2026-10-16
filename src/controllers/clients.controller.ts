@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { Client, CLIENT_DETAIL_FIELDS, CLIENT_STATUSES, clientJson, createClient, deleteClient, findClientById, listClients, NewClient, saveClient } from '../models/client.model';
-import { contractJson, createContract, deleteClientContracts, deleteContract, listContracts, Contract, paperStatus } from '../models/contract.model';
+import { contractJson, createContract, defaultContractTitle, deleteClientContracts, deleteContract, listContracts, Contract, paperStatus } from '../models/contract.model';
 import { createDocument, deleteClientDocuments, Doc, documentJson, findDocumentsByIds, listDocuments, resolveDocs } from '../models/document.model';
 import { deleteClientOrders } from '../models/order.model';
 import { deleteClientProducts } from '../models/product.model';
 import { HttpError } from '../utils/HttpError';
-import { byId } from '../utils/validate';
+import { byId, castDate } from '../utils/validate';
 import { documentFromFile } from '../utils/documentFromFile';
 import { deleteFromStorage } from '../config/storage';
 
-type MulterFields = { contract?: Express.Multer.File[]; documents?: Express.Multer.File[] };
+type MulterFields = { nda?: Express.Multer.File[]; contract?: Express.Multer.File[]; documents?: Express.Multer.File[] };
 
 // The optional card and requisites fields present in a request body.
 function detailFields(body: Record<string, unknown>): Partial<NewClient> {
@@ -41,23 +41,48 @@ export async function getById(req: Request, res: Response): Promise<void> {
   });
 }
 
-// A client usually starts with only an NDA; the framework contract comes later (POST /contracts).
-// A framework contract PDF can still be attached right away as `contract`.
+// A client is only taken on once an NDA is signed: creating one needs the signed NDA (`nda` file)
+// and its signing date, which become the client's first paper. A framework contract PDF can be
+// attached right away as `contract`; usually it comes later via POST /contracts.
 export async function create(req: Request, res: Response): Promise<void> {
-  const { name, code, contractTitle } = req.body as { name?: string; code?: string; contractTitle?: string };
+  const { name, code, contractTitle, ndaNumber, ndaSignedAt } = req.body as {
+    name?: string;
+    code?: string;
+    contractTitle?: string;
+    ndaNumber?: string;
+    ndaSignedAt?: string;
+  };
 
   const files = req.files as MulterFields | undefined;
+  const ndaFile = files?.nda?.[0];
   const contractFile = files?.contract?.[0];
   const supportingFiles = files?.documents ?? [];
 
   if (!name || !code) throw new HttpError(400, 'name and code are required');
+  if (!ndaFile) throw new HttpError(400, 'Додайте скан підписаного NDA');
+  if (!ndaSignedAt) throw new HttpError(400, 'Вкажіть дату підпису NDA');
+  castDate(ndaSignedAt, 'ndaSignedAt');
   if (contractFile && contractFile.mimetype !== 'application/pdf') throw new HttpError(400, 'contract must be a PDF file');
 
   let client: Client | undefined;
-  let contract: Contract | undefined;
+  const contracts: Contract[] = [];
   const uploadedDocs: Doc[] = [];
   try {
     client = await createClient({ name, code, ...detailFields(req.body) });
+
+    const ndaDoc = await createDocument(await documentFromFile(ndaFile, client.id, req.user!.id, 'nda'));
+    uploadedDocs.push(ndaDoc);
+    contracts.push(
+      await createContract({
+        title: defaultContractTitle('nda', ndaNumber?.trim()),
+        clientId: client.id,
+        type: 'nda',
+        number: ndaNumber,
+        signedAt: ndaSignedAt,
+        status: 'active',
+        documents: [ndaDoc.id],
+      })
+    );
 
     const contractDoc = contractFile
       ? await createDocument(await documentFromFile(contractFile, client.id, req.user!.id, 'framework_contract'))
@@ -71,18 +96,20 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
 
     if (contractDoc) {
-      contract = await createContract({
-        title: contractTitle || `${name} — Договір`,
-        clientId: client.id,
-        type: 'framework',
-        status: 'active',
-        documents: [contractDoc.id, ...supportingDocs.map((d) => d.id)],
-      });
+      contracts.push(
+        await createContract({
+          title: contractTitle || `${name} — Договір`,
+          clientId: client.id,
+          type: 'framework',
+          status: 'active',
+          documents: [contractDoc.id, ...supportingDocs.map((d) => d.id)],
+        })
+      );
     }
   } catch (err) {
     uploadedDocs.forEach((doc) => deleteFromStorage(doc.filename).catch(() => {}));
     if (client) await deleteClientDocuments(client.id);
-    if (contract) await deleteContract(contract.id);
+    for (const contract of contracts) await deleteContract(contract.id);
     if (client) await deleteClient(client.id);
     throw err;
   }

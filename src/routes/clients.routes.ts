@@ -14,6 +14,7 @@ router.post(
   '/',
   requirePermission('ORDERS', 'modify'),
   upload.fields([
+    { name: 'nda', maxCount: 1 },
     { name: 'contract', maxCount: 1 },
     { name: 'documents', maxCount: 10 },
   ]),
