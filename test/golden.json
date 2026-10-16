@@ -1345,7 +1345,7 @@
       "createdAt": "<ts>",
       "filename": "<file.jpg>",
       "mimeType": "image/jpeg",
-      "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+      "originalName": "фото плати.jpg",
       "size": 4,
       "updatedAt": "<ts>",
       "uploadedBy": "<id:1>"
@@ -1437,17 +1437,6 @@
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:20>",
-        "client": "<id:6>",
-        "createdAt": "<ts>",
-        "filename": "<file.jpg>",
-        "mimeType": "image/jpeg",
-        "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
-        "size": 4,
-        "updatedAt": "<ts>",
-        "uploadedBy": "<id:1>"
-      },
-      {
         "_id": "<id:12>",
         "client": "<id:6>",
         "createdAt": "<ts>",
@@ -1455,6 +1444,17 @@
         "mimeType": "application/pdf",
         "originalName": "spec-a.pdf",
         "size": 19,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:20>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.jpg>",
+        "mimeType": "image/jpeg",
+        "originalName": "фото плати.jpg",
+        "size": 4,
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       }
@@ -1498,17 +1498,6 @@
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:20>",
-        "client": "<id:6>",
-        "createdAt": "<ts>",
-        "filename": "<file.jpg>",
-        "mimeType": "image/jpeg",
-        "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
-        "size": 4,
-        "updatedAt": "<ts>",
-        "uploadedBy": "<id:1>"
-      },
-      {
         "_id": "<id:12>",
         "client": "<id:6>",
         "createdAt": "<ts>",
@@ -1516,6 +1505,17 @@
         "mimeType": "application/pdf",
         "originalName": "spec-a.pdf",
         "size": 19,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:20>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.jpg>",
+        "mimeType": "image/jpeg",
+        "originalName": "фото плати.jpg",
+        "size": 4,
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       }
@@ -1550,7 +1550,7 @@
     "step": "download document with non-ascii name",
     "status": 200,
     "body": {
-      "disposition": "attachment; filename=\"%C3%91%C2%84%C3%90%C2%BE%C3%91%C2%82%C3%90%C2%BE%20%C3%90%C2%BF%C3%90%C2%BB%C3%90%C2%B0%C3%91%C2%82%C3%90%C2%B8.jpg\"",
+      "disposition": "attachment; filename=\"%D1%84%D0%BE%D1%82%D0%BE%20%D0%BF%D0%BB%D0%B0%D1%82%D0%B8.jpg\"",
       "type": "image/jpeg"
     }
   },
@@ -1923,7 +1923,7 @@
             "filename": "<file.jpg>",
             "id": "<id:20>",
             "mimeType": "image/jpeg",
-            "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+            "originalName": "фото плати.jpg",
             "size": 4,
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
@@ -2634,7 +2634,7 @@
           "_id": "<id:20>",
           "createdAt": "<ts>",
           "mimeType": "image/jpeg",
-          "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+          "originalName": "фото плати.jpg",
           "size": 4
         }
       ],
@@ -2683,7 +2683,7 @@
           "_id": "<id:20>",
           "createdAt": "<ts>",
           "mimeType": "image/jpeg",
-          "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+          "originalName": "фото плати.jpg",
           "size": 4
         }
       ],

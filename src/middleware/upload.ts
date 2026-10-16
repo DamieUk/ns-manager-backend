@@ -15,6 +15,8 @@ const ALLOWED_MIME_TYPES = new Set([
 
 export const upload = multer({
   storage: multer.memoryStorage(),
+  // Browsers send the file name as raw UTF-8; multer's default (latin1) garbled Cyrillic names.
+  defParamCharset: 'utf8',
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
