@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { listActiveOrders } from '../models/order.model';
+import { listOrdersInStages } from '../models/order.model';
+import { WORK_STAGES } from '../models/orderStage.model';
 import { listEntries } from '../models/dailyProgress.model';
 import { findUsersByIds, User } from '../models/user.model';
 import { byId } from '../utils/validate';
@@ -8,7 +9,7 @@ import { loadOrderRefs } from './orders.controller';
 export async function getDashboard(req: Request, res: Response): Promise<void> {
   const employeeFilter = typeof req.query.employee === 'string' ? req.query.employee : undefined;
 
-  const orders = await listActiveOrders();
+  const orders = await listOrdersInStages(WORK_STAGES);
   const refs = await loadOrderRefs(orders);
 
   const allEntries = await listEntries({ orderIds: orders.map((o) => o.id) });
@@ -46,6 +47,8 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
         return {
           orderId: order.id,
+          number: order.number,
+          stage: order.stage,
           product: { id: product.id, name: product.name },
           client: { id: client.id, name: client.name },
           quantity: order.quantity,

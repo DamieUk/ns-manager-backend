@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import { contracts, contractDocuments } from '../db/schema';
 import { newId } from '../db/ids';
@@ -120,6 +120,26 @@ export async function listContracts(filter: { clientId?: unknown } = {}): Promis
   const where = filter.clientId !== undefined ? eq(contracts.clientId, castId(filter.clientId, 'client')) : undefined;
   return withDocuments(await db().select().from(contracts).where(where).orderBy(desc(contracts.createdAt), desc(contracts.id)));
 }
+
+export async function listContractsOfClients(clientIds: string[]): Promise<Contract[]> {
+  if (clientIds.length === 0) return [];
+  return withDocuments(
+    await db().select().from(contracts).where(inArray(contracts.clientId, clientIds)).orderBy(desc(contracts.createdAt), desc(contracts.id))
+  );
+}
+
+// The annexes that cover a batch, newest first.
+export async function listOrderAnnexes(orderId: string): Promise<Contract[]> {
+  return withDocuments(
+    await db()
+      .select()
+      .from(contracts)
+      .where(and(eq(contracts.orderId, orderId), eq(contracts.type, 'annex')))
+      .orderBy(desc(contracts.createdAt), desc(contracts.id))
+  );
+}
+
+export const isSigned = (c: Contract) => Boolean(c.signedAt) && c.status !== 'cancelled';
 
 export async function findContractById(id: unknown): Promise<Contract | null> {
   const [row] = await db().select().from(contracts).where(eq(contracts.id, castId(id)));

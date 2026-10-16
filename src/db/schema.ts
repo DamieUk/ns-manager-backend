@@ -1,4 +1,4 @@
-import { boolean, char, datetime, index, int, mysqlTable, primaryKey, text, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
+import { boolean, char, datetime, decimal, index, int, mysqlTable, primaryKey, text, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
 
 // Ids are 24-character hex strings (time-ordered, like the MongoDB ObjectIds the API has always
 // returned). References are plain columns without foreign keys on purpose: as before, deleting a
@@ -6,6 +6,7 @@ import { boolean, char, datetime, index, int, mysqlTable, primaryKey, text, uniq
 const id = () => char('id', { length: 24 }).primaryKey();
 const ref = (name: string) => char(name, { length: 24 });
 const stamp = (name: string) => datetime(name, { mode: 'date', fsp: 3 });
+const money = (name: string) => decimal(name, { precision: 14, scale: 2, mode: 'number' });
 const timestamps = () => ({
   createdAt: stamp('created_at').notNull(),
   updatedAt: stamp('updated_at').notNull(),
@@ -143,20 +144,50 @@ export const productFiles = mysqlTable(
   (t) => [primaryKey({ columns: [t.productId, t.position] })]
 );
 
+// An order is a batch (партія): one annex to the framework contract, one price, moving through
+// the stages in ORDER_STAGES. `status` follows the stage (active / completed / cancelled).
 export const orders = mysqlTable(
   'orders',
   {
     id: id(),
+    number: varchar('number', { length: 16 }).notNull(), // «26-001»: two-digit year, sequence within it
     clientId: ref('client_id').notNull(),
     productId: ref('product_id').notNull(),
     quantity: int('quantity').notNull(),
     description: text('description').notNull(), // encrypted
     status: varchar('status', { length: 16 }).notNull(),
+    stage: varchar('stage', { length: 16 }).notNull().default('quote'),
+    stageChangedAt: stamp('stage_changed_at').notNull(),
     dueDate: stamp('due_date'),
     managerId: ref('manager_id'),
+    // The quote is priced in the client's currency; once agreed, the batch is fixed in UAH.
+    quoteAmount: money('quote_amount'), // whole batch, in quoteCurrency
+    quoteCurrency: varchar('quote_currency', { length: 3 }),
+    exchangeRate: decimal('exchange_rate', { precision: 12, scale: 4, mode: 'number' }), // UAH per 1 quoteCurrency
+    priceUah: money('price_uah'), // the agreed batch price for the annex and invoices
     ...timestamps(),
   },
-  (t) => [index('orders_client_id').on(t.clientId), index('orders_status').on(t.status)]
+  (t) => [
+    uniqueIndex('orders_number').on(t.number),
+    index('orders_client_id').on(t.clientId),
+    index('orders_status').on(t.status),
+    index('orders_stage').on(t.stage),
+  ]
+);
+
+// Every stage change of a batch, oldest first; `fromStage` is null for the batch's creation.
+export const orderStageEvents = mysqlTable(
+  'order_stage_events',
+  {
+    id: id(),
+    orderId: ref('order_id').notNull(),
+    fromStage: varchar('from_stage', { length: 16 }),
+    toStage: varchar('to_stage', { length: 16 }).notNull(),
+    userId: ref('user_id'), // null for changes made by a migration
+    note: text('note'), // encrypted
+    createdAt: stamp('created_at').notNull(),
+  },
+  (t) => [index('order_stage_events_order_id').on(t.orderId)]
 );
 
 export const orderEmployees = mysqlTable(

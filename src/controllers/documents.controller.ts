@@ -6,15 +6,19 @@ import { castId } from '../utils/validate';
 import { deleteFromStorage, readFromStorage } from '../config/storage';
 import { documentFromFile } from '../utils/documentFromFile';
 import { ACTION_RANK } from '../constants/permissions';
+import { isDocumentOfAssignedOrder } from '../models/order.model';
 
 // Anyone with ORDERS:view can browse the shared client document pool. An employee without
 // that permission can still fetch a document they uploaded themselves (e.g. a photo attached
 // to their own daily-progress report) — narrowly scoped to their own uploads only.
-function canAccessDocument(req: Request, document: Doc): boolean {
+// ORDERS:view opens every document; otherwise one's own uploads and the files of the batches
+// one is assigned to (BOM, P&P program, thermal profile, ...).
+async function canAccessDocument(req: Request, document: Doc): Promise<boolean> {
   const entry = req.user!.permissions.find((p) => p.key === 'ORDERS');
   const actual = entry?.action ?? 'none';
   if (ACTION_RANK[actual] >= ACTION_RANK.view) return true;
-  return document.uploadedBy === req.user!.id;
+  if (document.uploadedBy === req.user!.id) return true;
+  return isDocumentOfAssignedOrder(document.id, req.user!.id);
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
@@ -25,7 +29,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 export async function getById(req: Request, res: Response): Promise<void> {
   const document = await findDocumentById(req.params.id);
   if (!document) throw new HttpError(404, 'Document not found');
-  if (!canAccessDocument(req, document)) throw new HttpError(403, 'Requires ORDERS:view permission');
+  if (!(await canAccessDocument(req, document))) throw new HttpError(403, 'Requires ORDERS:view permission');
   res.json(documentJson(document));
 }
 
@@ -56,7 +60,7 @@ export async function update(req: Request, res: Response): Promise<void> {
 export async function download(req: Request, res: Response): Promise<void> {
   const document = await findDocumentById(req.params.id);
   if (!document) throw new HttpError(404, 'Document not found');
-  if (!canAccessDocument(req, document)) throw new HttpError(403, 'Requires ORDERS:view permission');
+  if (!(await canAccessDocument(req, document))) throw new HttpError(403, 'Requires ORDERS:view permission');
 
   let object;
   try {
