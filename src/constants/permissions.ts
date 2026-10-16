@@ -1,4 +1,6 @@
-export const ROLES = ['executive', 'manager', 'employee'] as const;
+// executive — the company's owners (shown as «Власник»): full access, approve requests.
+// employee — workshop staff: their assigned orders, reports and requests.
+export const ROLES = ['executive', 'employee'] as const;
 export type Role = (typeof ROLES)[number];
 
 export const PERMISSION_KEYS = ['ORDERS', 'USERS', 'PRODUCTS'] as const;
@@ -24,15 +26,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<Role, Permission[]> = {
     { key: 'USERS', action: 'modify' },
     { key: 'PRODUCTS', action: 'modify' },
   ],
-  manager: [
-    { key: 'USERS', action: 'modify' },
-    { key: 'PRODUCTS', action: 'modify' },
-  ],
   employee: [{ key: 'PRODUCTS', action: 'view' }],
 };
 
 export function canManageRole(actorRole: Role, targetRole: Role): boolean {
-  if (actorRole === 'executive') return true;
-  if (actorRole === 'manager') return targetRole === 'employee';
-  return false;
+  return actorRole === 'executive' && ROLES.includes(targetRole);
 }

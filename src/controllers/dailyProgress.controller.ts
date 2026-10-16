@@ -19,10 +19,8 @@ import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 import { documentFromFile } from '../utils/documentFromFile';
 import { deleteFromStorage } from '../config/storage';
 
-const MANAGEMENT_ROLES = ['executive', 'manager'];
-
 function isManagement(role: string): boolean {
-  return MANAGEMENT_ROLES.includes(role);
+  return role === 'executive';
 }
 
 function isAssignedToOrder(order: Order, userId: string): boolean {

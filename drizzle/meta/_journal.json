@@ -8,6 +8,13 @@
       "when": 1792179097841,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1792190847629,
+      "tag": "0001_drop_manager_role",
+      "breakpoints": true
     }
   ]
 }

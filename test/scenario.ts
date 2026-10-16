@@ -5,7 +5,7 @@ const UNKNOWN_ID = '0123456789abcdef01234567';
 
 type Body = Record<string, any>;
 
-// Walks the whole API as executive, manager and employees and records every response, so a
+// Walks the whole API as two executives (owners) and employees and records every response, so a
 // rewrite of the data layer can be checked against the recorded run. Dates are relative to
 // today and creates that are later listed by createdAt are spaced apart, so the run is stable.
 export async function runScenario(server: TestServer, execPassword: string): Promise<Step[]> {
@@ -40,7 +40,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
 
   const anon = new Actor('anon');
   const exec = new Actor('exec');
-  const manager = new Actor('manager');
+  const partner = new Actor('co-owner');
   const olena = new Actor('olena');
   const petro = new Actor('petro');
   const ivan = new Actor('ivan');
@@ -63,13 +63,16 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   const person = { jobTitle: 'Assembler', phone: '+380 44 000 00 00', address: 'Kyiv' };
   rec('create user missing name', await exec.req('POST', '/users', { json: { ...person, email: 'x@test.local', role: 'employee' } }));
   rec('create user invalid role', await exec.req('POST', '/users', { json: { ...person, firstName: 'A', lastName: 'B', email: 'x@test.local', role: 'boss' } }));
-  const mgrId = rec('create manager', await exec.req('POST', '/users', {
-    json: { ...person, firstName: 'Maria', lastName: 'Manager', jobTitle: 'Production manager', email: ' Manager@Test.local ', role: 'manager' },
+  rec('create user with removed manager role', await exec.req('POST', '/users', {
+    json: { ...person, firstName: 'A', lastName: 'B', email: 'x@test.local', role: 'manager' },
+  }));
+  const partnerId = rec('create co-owner', await exec.req('POST', '/users', {
+    json: { ...person, firstName: 'Maria', lastName: 'Partner', jobTitle: 'Co-owner', email: ' Partner@Test.local ', role: 'executive' },
   })).id;
-  const inviteToken = await takeToken('manager@test.local', 'accept-invite');
+  const inviteToken = await takeToken('partner@test.local', 'accept-invite');
   rec('accept invite short password', await anon.req('POST', '/auth/accept-invite', { json: { token: inviteToken, password: 'short' } }));
-  rec('accept invite', await anon.req('POST', '/auth/accept-invite', { json: { token: inviteToken, password: 'manager-pass-1' } }));
-  rec('accept invite token reused', await anon.req('POST', '/auth/accept-invite', { json: { token: inviteToken, password: 'manager-pass-1' } }));
+  rec('accept invite', await anon.req('POST', '/auth/accept-invite', { json: { token: inviteToken, password: 'partner-pass-1' } }));
+  rec('accept invite token reused', await anon.req('POST', '/auth/accept-invite', { json: { token: inviteToken, password: 'partner-pass-1' } }));
   rec('accept invite missing token', await anon.req('POST', '/auth/accept-invite', { json: { password: 'whatever-123' } }));
   await tick();
   const e1 = rec('create employee olena', await exec.req('POST', '/users', {
@@ -85,23 +88,24 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('set password too short', await exec.req('PUT', `/users/${e1}/password`, { json: { password: '123' } }));
   rec('set password olena', await exec.req('PUT', `/users/${e1}/password`, { json: { password: 'olena-pass-1' } }));
   rec('set password petro', await exec.req('PUT', `/users/${e2}/password`, { json: { password: 'petro-pass-1' } }));
-  rec('login manager', await login(manager, 'manager@test.local', 'manager-pass-1'));
+  rec('login co-owner', await login(partner, 'partner@test.local', 'partner-pass-1'));
   rec('login olena', await login(olena, 'olena@test.local', 'olena-pass-1'));
   rec('login petro', await login(petro, 'petro@test.local', 'petro-pass-1'));
   rec('admin changes olena password', await exec.req('PUT', `/users/${e1}/password`, { json: { password: 'olena-pass-2' } }));
   rec('olena session after password change', await olena.req('GET', '/auth/me'));
   rec('login olena new password', await login(olena, 'olena@test.local', 'olena-pass-2'));
 
-  rec('manager creates executive', await manager.req('POST', '/users', {
+  rec('employee creates user', await olena.req('POST', '/users', {
     json: { ...person, firstName: 'No', lastName: 'Way', email: 'boss@test.local', role: 'executive' },
   }));
   await tick();
-  const e3 = rec('manager creates employee with custom permissions', await manager.req('POST', '/users', {
+  const e3 = rec('co-owner creates employee with custom permissions', await partner.req('POST', '/users', {
     json: { ...person, firstName: 'Ivan', lastName: 'Tkach', email: 'ivan@test.local', role: 'employee', permissions: [{ key: 'PRODUCTS', action: 'none' }] },
   })).id;
   await takeToken('ivan@test.local', 'accept-invite'); // invite sent on create; not used
-  rec('manager edits executive', await manager.req('PUT', `/users/${execId}`, { json: { jobTitle: 'Nope' } }));
-  rec('manager sets executive password', await manager.req('PUT', `/users/${execId}/password`, { json: { password: 'hijack-123' } }));
+  rec('co-owner edits executive', await partner.req('PUT', `/users/${execId}`, { json: { jobTitle: 'Founder' } }));
+  rec('employee edits executive', await olena.req('PUT', `/users/${execId}`, { json: { jobTitle: 'Nope' } }));
+  rec('employee sets executive password', await olena.req('PUT', `/users/${execId}/password`, { json: { password: 'hijack-123' } }));
   rec('list users', await exec.req('GET', '/users'));
   rec('get user', await exec.req('GET', `/users/${e1}`));
   rec('get user malformed id', await exec.req('GET', '/users/not-an-id'));
@@ -110,7 +114,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('update user invalid status', await exec.req('PUT', `/users/${e1}`, { json: { status: 'retired' } }));
   rec('update user empty first name', await exec.req('PUT', `/users/${e1}`, { json: { firstName: '' } }));
   rec('update user back to working', await exec.req('PUT', `/users/${e1}`, { json: { status: 'working', address: 'Lviv' } }));
-  rec('manager lists users', await manager.req('GET', '/users'));
+  rec('co-owner lists users', await partner.req('GET', '/users'));
   rec('employee lists users', await olena.req('GET', '/users'));
 
   rec('forgot password unknown email', await anon.req('POST', '/auth/forgot-password', { json: { email: 'nobody@test.local' } }));
@@ -158,7 +162,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('update client invalid status', await exec.req('PUT', `/clients/${c3}`, { json: { status: 'archived' } }));
   rec('update client empty name', await exec.req('PUT', `/clients/${c3}`, { json: { name: '' } }));
   rec('employee lists clients', await olena.req('GET', '/clients'));
-  rec('manager lists clients', await manager.req('GET', '/clients'));
+  rec('co-owner lists clients', await partner.req('GET', '/clients'));
 
   // ---- contracts
   rec('list contracts', await exec.req('GET', '/contracts'));
@@ -245,8 +249,8 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('employee without PRODUCTS lists products', await ivan.req('GET', `/products?client=${c1}`));
   rec('grant PRODUCTS view', await exec.req('PUT', `/users/${e3}`, { json: { permissions: [{ key: 'PRODUCTS', action: 'view' }] } }));
   rec('employee with granted PRODUCTS lists products', await ivan.req('GET', `/products?client=${c2}`));
-  rec('promote ivan to manager', await exec.req('PUT', `/users/${e3}`, { json: { role: 'manager' } }));
-  rec('manager edits another manager', await manager.req('PUT', `/users/${e3}`, { json: { jobTitle: 'x' } }));
+  rec('change role to removed manager role', await exec.req('PUT', `/users/${e3}`, { json: { role: 'manager' } }));
+  rec('promote ivan to executive', await exec.req('PUT', `/users/${e3}`, { json: { role: 'executive' } }));
   rec('demote ivan to employee', await exec.req('PUT', `/users/${e3}`, { json: { role: 'employee' } }));
   rec('deactivate ivan', await exec.req('PUT', `/users/${e3}`, { json: { isActive: false } }));
   rec('ivan session after deactivation', await ivan.req('GET', '/auth/me'));
@@ -261,12 +265,12 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('create order blank description', await exec.req('POST', '/orders', { json: { ...base, description: '   ' } }));
   rec('create order unknown product', await exec.req('POST', '/orders', { json: { ...base, product: UNKNOWN_ID } }));
   rec('create order invalid status', await exec.req('POST', '/orders', { json: { ...base, status: 'paused' } }));
-  rec('create order manager is employee', await exec.req('POST', '/orders', { json: { ...base, manager: e1 } }));
-  rec('create order unknown manager', await exec.req('POST', '/orders', { json: { ...base, manager: UNKNOWN_ID } }));
-  rec('create order invalid employees', await exec.req('POST', '/orders', { json: { ...base, assignedEmployees: [e1, mgrId] } }));
+  rec('create order responsible is employee', await exec.req('POST', '/orders', { json: { ...base, manager: e1 } }));
+  rec('create order unknown responsible', await exec.req('POST', '/orders', { json: { ...base, manager: UNKNOWN_ID } }));
+  rec('create order invalid employees', await exec.req('POST', '/orders', { json: { ...base, assignedEmployees: [e1, partnerId] } }));
   rec('create order foreign documents', await exec.req('POST', '/orders', { json: { ...base, documents: [dOther] } }));
   const o1 = rec('create order', await exec.req('POST', '/orders', {
-    json: { ...base, dueDate: day(10), manager: mgrId, assignedEmployees: [e2, e1], documents: [d1, d2], status: 'active' },
+    json: { ...base, dueDate: day(10), manager: partnerId, assignedEmployees: [e2, e1], documents: [d1, d2], status: 'active' },
   }))._id;
   await tick();
   const o2 = rec('create order 2', await exec.req('POST', '/orders', { json: { client: c1, product: p2, quantity: 5, description: 'Антени', assignedEmployees: [e1] } }))._id;
@@ -287,7 +291,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('employee gets unassigned order', await olena.req('GET', `/orders/${o3}`));
   rec('get order malformed id', await exec.req('GET', '/orders/123'));
   rec('employee creates order', await olena.req('POST', '/orders', { json: base }));
-  rec('update order', await exec.req('PUT', `/orders/${o2}`, { json: { quantity: 8, dueDate: day(5), manager: mgrId, assignedEmployees: [e1, e3] } }));
+  rec('update order', await exec.req('PUT', `/orders/${o2}`, { json: { quantity: 8, dueDate: day(5), manager: partnerId, assignedEmployees: [e1, e3] } }));
   rec('update order clear fields', await exec.req('PUT', `/orders/${o2}`, { json: { dueDate: null, manager: null } }));
   rec('update order zero quantity', await exec.req('PUT', `/orders/${o2}`, { json: { quantity: 0 } }));
   rec('update order blank description', await exec.req('PUT', `/orders/${o2}`, { json: { description: ' ' } }));
@@ -327,7 +331,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('employee lists progress (filter ignored)', await petro.req('GET', `/daily-progress?employee=${e1}`));
   rec('get progress', await olena.req('GET', `/daily-progress/${dp1}`));
   rec('get progress of other employee', await petro.req('GET', `/daily-progress/${dp1}`));
-  const photoId = rec('manager gets progress', await manager.req('GET', `/daily-progress/${dp1}`)).photo?._id;
+  const photoId = rec('co-owner gets progress', await partner.req('GET', `/daily-progress/${dp1}`)).photo?._id;
   rec('employee downloads own photo', await olena.req('GET', `/documents/${photoId}/download`), (r) => ({ type: r.headers.get('content-type') }));
   rec('other employee downloads photo', await petro.req('GET', `/documents/${photoId}/download`));
   rec('dashboard', await exec.req('GET', '/dashboard'));
@@ -356,7 +360,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('order with deleted product', await exec.req('GET', `/orders/${o3}`));
   rec('delete own account', await exec.req('DELETE', `/users/${execId}`));
   rec('delete active user', await exec.req('DELETE', `/users/${e2}`));
-  rec('manager deletes executive', await manager.req('DELETE', `/users/${execId}`));
+  rec('employee deletes executive', await olena.req('DELETE', `/users/${execId}`));
   rec('mark petro deleted', await exec.req('PUT', `/users/${e2}`, { json: { status: 'deleted' } }));
   rec('petro session after deactivation', await petro.req('GET', '/auth/me'));
   rec('login deactivated petro', await login(petro, 'petro@test.local', 'petro-pass-2'));

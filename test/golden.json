@@ -106,19 +106,30 @@
     }
   },
   {
-    "step": "create manager",
+    "step": "create user with removed manager role",
+    "status": 400,
+    "body": {
+      "message": "Invalid role"
+    }
+  },
+  {
+    "step": "create co-owner",
     "status": 201,
     "body": {
       "address": "Kyiv",
       "avatarUrl": null,
       "createdAt": "<ts>",
-      "email": "manager@test.local",
+      "email": "partner@test.local",
       "firstName": "Maria",
       "id": "<id:2>",
       "isActive": true,
-      "jobTitle": "Production manager",
-      "lastName": "Manager",
+      "jobTitle": "Co-owner",
+      "lastName": "Partner",
       "permissions": [
+        {
+          "action": "modify",
+          "key": "ORDERS"
+        },
         {
           "action": "modify",
           "key": "USERS"
@@ -129,7 +140,7 @@
         }
       ],
       "phone": "+380 44 000 00 00",
-      "role": "manager",
+      "role": "executive",
       "status": "working"
     }
   },
@@ -238,15 +249,19 @@
     }
   },
   {
-    "step": "login manager",
+    "step": "login co-owner",
     "status": 200,
     "body": {
       "avatarUrl": null,
       "createdAt": "<ts>",
-      "email": "manager@test.local",
+      "email": "partner@test.local",
       "id": "<id:2>",
-      "name": "Maria Manager",
+      "name": "Maria Partner",
       "permissions": [
+        {
+          "action": "modify",
+          "key": "ORDERS"
+        },
         {
           "action": "modify",
           "key": "USERS"
@@ -256,7 +271,7 @@
           "key": "PRODUCTS"
         }
       ],
-      "role": "manager"
+      "role": "executive"
     }
   },
   {
@@ -328,14 +343,14 @@
     }
   },
   {
-    "step": "manager creates executive",
+    "step": "employee creates user",
     "status": 403,
     "body": {
-      "message": "Insufficient role to create this account"
+      "message": "Requires USERS:modify permission"
     }
   },
   {
-    "step": "manager creates employee with custom permissions",
+    "step": "co-owner creates employee with custom permissions",
     "status": 201,
     "body": {
       "address": "Kyiv",
@@ -359,17 +374,49 @@
     }
   },
   {
-    "step": "manager edits executive",
-    "status": 403,
+    "step": "co-owner edits executive",
+    "status": 200,
     "body": {
-      "message": "Insufficient role to edit this account"
+      "address": "—",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "exec@test.local",
+      "firstName": "Ivan",
+      "id": "<id:1>",
+      "isActive": true,
+      "jobTitle": "Founder",
+      "lastName": "Executive",
+      "permissions": [
+        {
+          "action": "modify",
+          "key": "ORDERS"
+        },
+        {
+          "action": "modify",
+          "key": "USERS"
+        },
+        {
+          "action": "modify",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "—",
+      "role": "executive",
+      "status": "working"
     }
   },
   {
-    "step": "manager sets executive password",
+    "step": "employee edits executive",
     "status": 403,
     "body": {
-      "message": "Insufficient role to reset this account"
+      "message": "Requires USERS:modify permission"
+    }
+  },
+  {
+    "step": "employee sets executive password",
+    "status": 403,
+    "body": {
+      "message": "Requires USERS:modify permission"
     }
   },
   {
@@ -440,13 +487,17 @@
         "address": "Kyiv",
         "avatarUrl": null,
         "createdAt": "<ts>",
-        "email": "manager@test.local",
+        "email": "partner@test.local",
         "firstName": "Maria",
         "id": "<id:2>",
         "isActive": true,
-        "jobTitle": "Production manager",
-        "lastName": "Manager",
+        "jobTitle": "Co-owner",
+        "lastName": "Partner",
         "permissions": [
+          {
+            "action": "modify",
+            "key": "ORDERS"
+          },
           {
             "action": "modify",
             "key": "USERS"
@@ -457,7 +508,7 @@
           }
         ],
         "phone": "+380 44 000 00 00",
-        "role": "manager",
+        "role": "executive",
         "status": "working"
       },
       {
@@ -468,7 +519,7 @@
         "firstName": "Ivan",
         "id": "<id:1>",
         "isActive": true,
-        "jobTitle": "Executive",
+        "jobTitle": "Founder",
         "lastName": "Executive",
         "permissions": [
           {
@@ -591,7 +642,7 @@
     }
   },
   {
-    "step": "manager lists users",
+    "step": "co-owner lists users",
     "status": 200,
     "body": [
       {
@@ -658,13 +709,17 @@
         "address": "Kyiv",
         "avatarUrl": null,
         "createdAt": "<ts>",
-        "email": "manager@test.local",
+        "email": "partner@test.local",
         "firstName": "Maria",
         "id": "<id:2>",
         "isActive": true,
-        "jobTitle": "Production manager",
-        "lastName": "Manager",
+        "jobTitle": "Co-owner",
+        "lastName": "Partner",
         "permissions": [
+          {
+            "action": "modify",
+            "key": "ORDERS"
+          },
           {
             "action": "modify",
             "key": "USERS"
@@ -675,7 +730,7 @@
           }
         ],
         "phone": "+380 44 000 00 00",
-        "role": "manager",
+        "role": "executive",
         "status": "working"
       },
       {
@@ -686,7 +741,7 @@
         "firstName": "Ivan",
         "id": "<id:1>",
         "isActive": true,
-        "jobTitle": "Executive",
+        "jobTitle": "Founder",
         "lastName": "Executive",
         "permissions": [
           {
@@ -1078,11 +1133,45 @@
     }
   },
   {
-    "step": "manager lists clients",
-    "status": 403,
-    "body": {
-      "message": "Requires ORDERS:view permission"
-    }
+    "step": "co-owner lists clients",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:8>",
+        "code": "ZET-03",
+        "createdAt": "<ts>",
+        "email": "new@zeta.io",
+        "id": "<id:8>",
+        "name": "Zeta Labs",
+        "notes": "",
+        "phone": "+1 555 0100",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:7>",
+        "code": "ALP-02",
+        "createdAt": "<ts>",
+        "id": "<id:7>",
+        "name": "alpha systems",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:6>",
+        "address": "Київ",
+        "code": "BOR-01",
+        "contactName": "Андрій",
+        "createdAt": "<ts>",
+        "email": "info@borysfen.ua",
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс",
+        "notes": "VIP клієнт",
+        "phone": "+380 44 222",
+        "status": "active",
+        "updatedAt": "<ts>"
+      }
+    ]
   },
   {
     "step": "list contracts",
@@ -2045,7 +2134,14 @@
     ]
   },
   {
-    "step": "promote ivan to manager",
+    "step": "change role to removed manager role",
+    "status": 400,
+    "body": {
+      "message": "Invalid role"
+    }
+  },
+  {
+    "step": "promote ivan to executive",
     "status": 200,
     "body": {
       "address": "Kyiv",
@@ -2064,15 +2160,8 @@
         }
       ],
       "phone": "+380 44 000 00 00",
-      "role": "manager",
+      "role": "executive",
       "status": "working"
-    }
-  },
-  {
-    "step": "manager edits another manager",
-    "status": 403,
-    "body": {
-      "message": "Insufficient role to edit this account"
     }
   },
   {
@@ -2215,17 +2304,17 @@
     }
   },
   {
-    "step": "create order manager is employee",
+    "step": "create order responsible is employee",
     "status": 400,
     "body": {
-      "message": "manager must be a manager or executive"
+      "message": "manager must be an executive"
     }
   },
   {
-    "step": "create order unknown manager",
+    "step": "create order unknown responsible",
     "status": 400,
     "body": {
-      "message": "manager must be a manager or executive"
+      "message": "manager must be an executive"
     }
   },
   {
@@ -2274,7 +2363,7 @@
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
-        "lastName": "Manager"
+        "lastName": "Partner"
       },
       "product": "<id:22>",
       "quantity": 100,
@@ -2454,7 +2543,7 @@
         "id": "<id:28>",
         "manager": {
           "id": "<id:2>",
-          "name": "Maria Manager"
+          "name": "Maria Partner"
         },
         "product": {
           "id": "<id:22>",
@@ -2592,7 +2681,7 @@
         "id": "<id:28>",
         "manager": {
           "id": "<id:2>",
-          "name": "Maria Manager"
+          "name": "Maria Partner"
         },
         "product": {
           "id": "<id:22>",
@@ -2642,7 +2731,7 @@
       "id": "<id:28>",
       "manager": {
         "id": "<id:2>",
-        "name": "Maria Manager"
+        "name": "Maria Partner"
       },
       "product": {
         "id": "<id:22>",
@@ -2691,7 +2780,7 @@
       "id": "<id:28>",
       "manager": {
         "id": "<id:2>",
-        "name": "Maria Manager"
+        "name": "Maria Partner"
       },
       "product": {
         "id": "<id:22>",
@@ -2751,7 +2840,7 @@
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
-        "lastName": "Manager"
+        "lastName": "Partner"
       },
       "product": "<id:26>",
       "quantity": 8,
@@ -2848,7 +2937,7 @@
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
-        "lastName": "Manager"
+        "lastName": "Partner"
       },
       "product": "<id:22>",
       "quantity": 100,
@@ -3371,7 +3460,7 @@
     }
   },
   {
-    "step": "manager gets progress",
+    "step": "co-owner gets progress",
     "status": 200,
     "body": {
       "completed": 15,
@@ -3469,7 +3558,7 @@
           "isOverdue": false,
           "manager": {
             "id": "<id:2>",
-            "name": "Maria Manager"
+            "name": "Maria Partner"
           },
           "orderId": "<id:28>",
           "product": {
@@ -3608,7 +3697,7 @@
           "isOverdue": false,
           "manager": {
             "id": "<id:2>",
-            "name": "Maria Manager"
+            "name": "Maria Partner"
           },
           "orderId": "<id:28>",
           "product": {
@@ -3981,7 +4070,7 @@
       "id": "<id:28>",
       "manager": {
         "id": "<id:2>",
-        "name": "Maria Manager"
+        "name": "Maria Partner"
       },
       "product": {
         "id": "<id:22>",
@@ -4080,7 +4169,7 @@
         "id": "<id:28>",
         "manager": {
           "id": "<id:2>",
-          "name": "Maria Manager"
+          "name": "Maria Partner"
         },
         "product": {
           "id": "<id:22>",
@@ -4113,10 +4202,10 @@
     }
   },
   {
-    "step": "manager deletes executive",
+    "step": "employee deletes executive",
     "status": 403,
     "body": {
-      "message": "Insufficient role to delete this account"
+      "message": "Requires USERS:modify permission"
     }
   },
   {
@@ -4182,7 +4271,7 @@
       "id": "<id:28>",
       "manager": {
         "id": "<id:2>",
-        "name": "Maria Manager"
+        "name": "Maria Partner"
       },
       "product": {
         "id": "<id:22>",
@@ -4287,7 +4376,7 @@
           "isOverdue": false,
           "manager": {
             "id": "<id:2>",
-            "name": "Maria Manager"
+            "name": "Maria Partner"
           },
           "orderId": "<id:28>",
           "product": {

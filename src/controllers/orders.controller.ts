@@ -19,17 +19,16 @@ import { HttpError } from '../utils/HttpError';
 import { byId, castId, castIds } from '../utils/validate';
 import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 
-const MANAGER_ROLES = ['executive', 'manager'];
-
 async function assertDocumentsBelongToClient(documentIds: string[], client: string): Promise<void> {
   if (documentIds.length === 0) return;
   const validCount = await countClientDocuments(documentIds, client);
   if (validCount !== documentIds.length) throw new HttpError(400, 'One or more documents are invalid for this client');
 }
 
+// `manager` is the order's responsible owner («Відповідальний») — always an executive.
 async function assertValidManager(managerId: string): Promise<void> {
   const manager = await findUserById(managerId);
-  if (!manager || !MANAGER_ROLES.includes(manager.role)) throw new HttpError(400, 'manager must be a manager or executive');
+  if (!manager || manager.role !== 'executive') throw new HttpError(400, 'manager must be an executive');
 }
 
 async function assertValidEmployees(employeeIds: string[]): Promise<void> {
