@@ -1,0 +1,70 @@
+# Whole stack on one server. Expects both repositories cloned side by side:
+#   /opt/numenor/ns-manager-backend
+#   /opt/numenor/ns-manager-client
+# Run from this directory: docker compose up -d --build
+
+name: numenor
+
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?set MONGO_ROOT_USER in deploy/.env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in deploy/.env}
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ..
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/numenor?authSource=admin
+      UPLOAD_DIR: /app/uploads
+      CLIENT_ORIGIN: https://${DOMAIN}
+      GOOGLE_CALLBACK_URL: https://${DOMAIN}/api/auth/google/callback
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build: ../../ns-manager-client
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  mongo-data:
+  uploads:
+  caddy-data:
+  caddy-config:

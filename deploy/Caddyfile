@@ -1,0 +1,13 @@
+# Edge proxy: terminates HTTPS (certificates from Let's Encrypt, renewed automatically),
+# sends /api/* to the backend and everything else to the static client.
+{$DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:5001
+	}
+
+	handle {
+		reverse_proxy web:80
+	}
+}

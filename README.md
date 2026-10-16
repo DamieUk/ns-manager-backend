@@ -2,12 +2,12 @@
 
 Node.js + Express + MongoDB (Mongoose), TypeScript. RBAC, Google OAuth + email/password auth,
 клієнти/замовлення/продукти/документи, польова шифрація чутливих полів (AES-256-GCM),
-завантаження файлів у S3-сумісне сховище.
+завантажені файли зберігаються на диску самого сервера.
 
 ## Розробка
 
 ```bash
-cp .env.example .env   # заповнити значення (Mongo, Google OAuth, SMTP, S3, секрети)
+cp .env.example .env   # заповнити значення (Mongo, Google OAuth, SMTP, секрети)
 npm install
 npm run dev             # tsx watch, http://localhost:5001
 ```
@@ -15,8 +15,8 @@ npm run dev             # tsx watch, http://localhost:5001
 Локально MongoDB запускається окремо (наприклад `brew services start mongodb-community`),
 `MONGODB_URI` за замовчуванням вказує на `mongodb://127.0.0.1:27017/numenor`.
 
-Для файлів (контракти, BOM, фото до звітів) потрібне S3-сумісне сховище навіть у розробці —
-дивись `.env.example` та розділ про Cloudflare R2 нижче.
+Файли (контракти, BOM, фото до звітів) пишуться в `./uploads` (або в `UPLOAD_DIR`, якщо задано).
+Тека в `.gitignore`.
 
 ## Структура
 
@@ -24,7 +24,7 @@ npm run dev             # tsx watch, http://localhost:5001
 src/
   app.ts              # express app (middleware, CORS, роути)
   server.ts           # entrypoint (mongo connect + listen)
-  config/             # db, passport, mailer, storage (S3)
+  config/             # db, passport, mailer, storage (локальний диск)
   constants/          # ролі/дозволи
   controllers/        # логіка обробників
   routes/             # маршрути, змонтовані під /api
@@ -32,65 +32,138 @@ src/
   models/             # mongoose-схеми
   utils/              # шифрування полів, токени, дати, HttpError
   scripts/            # seedExecutive.ts — створення першого executive-акаунта
+deploy/
+  docker-compose.yml  # увесь стек: MongoDB + API + клієнт + Caddy (HTTPS)
+  Caddyfile           # /api/* → бекенд, решта → клієнт
+  .env.example        # продакшн-змінні
+  backup.sh           # бекап бази та файлів
 ```
 
-## Деплой на Render
+## Деплой на власний сервер (VPS)
 
-Репозиторій містить `render.yaml` (Blueprint) — Render сам підхопить build/start-команди та
-health check (`/api/health`).
+Увесь стек працює на одному сервері в Docker: MongoDB, бекенд, статичний клієнт і Caddy, який
+автоматично отримує й оновлює HTTPS-сертифікат (Let's Encrypt). Клієнт і API живуть на одному
+домені (`https://<домен>/` і `https://<домен>/api`), тому CORS не потрібен. Сторонніх сервісів
+для бази чи файлів немає — усе на диску сервера.
 
-### 1. MongoDB Atlas
+```
+Інтернет → Caddy :443 ─┬─ /api/*  → api (Node, :5001) ─┬─ mongo (volume mongo-data)
+                       │                               └─ uploads (volume uploads)
+                       └─ решта   → web (статичний SPA)
+```
 
-Render не має власного managed MongoDB.
+### 1. Сервер і домен
 
-1. Створити безкоштовний кластер на [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Database Access → створити користувача з паролем
-3. Network Access → дозволити `0.0.0.0/0` (або звузити до Render IP пізніше)
-4. Скопіювати рядок підключення (`mongodb+srv://...`) — це значення для `MONGODB_URI`
+- VPS з Ubuntu 24.04, мінімум 2 vCPU / 4 GB RAM / 40 GB SSD (будь-який провайдер: Hetzner,
+  DigitalOcean, Contabo тощо; регіон — ЄС). 4 GB потрібні, бо на сервері збираються образи
+  і працює MongoDB.
+- У DNS домену створити **A-запис** (наприклад `app.numenorsystems.com`) на IP сервера.
+  Без цього Caddy не отримає сертифікат.
 
-### 2. Сховище файлів (Cloudflare R2)
-
-Контракти, BOM-файли та фото до звітів прогресу зберігаються в S3-сумісному сховищі
-(не на диску бекенда — на Render він ефемерний). Рекомендовано Cloudflare R2 (безкоштовно
-до 10 ГБ, без плати за вихідний трафік), але підійде будь-який S3-сумісний провайдер
-(AWS S3, Backblaze B2, DigitalOcean Spaces) — просто інші значення нижче.
-
-1. [dash.cloudflare.com](https://dash.cloudflare.com) → R2 → Create bucket (наприклад `numenor-files`)
-2. R2 → Manage API tokens → Create API token → права **Object Read & Write**, обмежені цим бакетом
-3. Значення для `.env`/Render:
-   - `S3_ENDPOINT` — `https://<account-id>.r2.cloudflarestorage.com` (account id видно в правій панелі R2)
-   - `S3_REGION` — `auto`
-   - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` — з токена
-   - `S3_BUCKET` — назва бакета
-
-### 3. Google OAuth (production redirect URI)
-
-У [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 2.0 Client →
-**Authorized redirect URIs** додати `https://<backend-service>.onrender.com/api/auth/google/callback`
-(точний домен буде відомий після кроку 4). Оновити `GOOGLE_CALLBACK_URL` цим самим значенням.
-
-### 4. GitHub + Render
-
-1. Запушити цей репозиторій у свій GitHub-акаунт
-2. Render → New → Blueprint → обрати репозиторій → Render прочитає `render.yaml`
-3. Ввести значення для змінних з `sync: false`: `MONGODB_URI`, `CLIENT_ORIGIN` (адреса
-   задеплоєного клієнта, можна тимчасово залишити як є й оновити пізніше), `GOOGLE_CLIENT_ID`,
-   `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`, `SESSION_SECRET`, `JWT_SECRET`, `SMTP_PASSWORD`,
-   `FIELD_ENCRYPTION_PASSPHRASE` (згенерувати новий надійний секрет для продакшену — не той,
-   що в локальному `.env`), `S3_*` з кроку 2
-4. Deploy — після збірки бекенд буде на `https://<service-name>.onrender.com`, перевірити на `/api/health`
-
-Безкоштовний план Render «засинає» після періоду неактивності — перший запит після паузи
-може займати кілька секунд (холодний старт).
-
-### 5. Перший executive-акаунт
-
-Продакшн-база стартує чистою. Створити перший акаунт напряму в Atlas-базі:
+### 2. Підготовка сервера
 
 ```bash
-MONGODB_URI="<production Atlas URI>" npm run seed:executive -- "damon@numenorsystems.com" "Damon Executive" "<google-email>"
+ssh root@<IP>
+apt update && apt upgrade -y
+curl -fsSL https://get.docker.com | sh          # Docker + compose plugin
+ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
 ```
 
-(або додати тимчасовий npm-скрипт, що викликає `src/scripts/seedExecutive.ts` — дивись сам файл
-щодо аргументів). Після цього решту акаунтів можна створювати вже через UI (сторінка
-«Користувачі», запрошення на email або пряме встановлення пароля).
+Назовні публікуються лише порти 80/443 (Caddy). MongoDB і бекенд доступні тільки всередині
+Docker-мережі.
+
+### 3. Код
+
+Обидва репозиторії мають лежати поруч — `docker-compose.yml` збирає клієнт з `../../ns-manager-client`:
+
+```bash
+mkdir -p /opt/numenor && cd /opt/numenor
+git clone git@github.com:DamieUk/ns-manager-backend.git
+git clone git@github.com:DamieUk/ns-manager-client.git
+```
+
+(Для приватних репозиторіїв — додати на сервері SSH-ключ як Deploy key у GitHub.)
+
+### 4. Налаштування
+
+```bash
+cd /opt/numenor/ns-manager-backend/deploy
+cp .env.example .env
+nano .env
+```
+
+- `DOMAIN` — домен з кроку 1
+- `MONGO_ROOT_PASSWORD` — `openssl rand -hex 24`
+- `SESSION_SECRET`, `JWT_SECRET` — `openssl rand -hex 32`
+- `FIELD_ENCRYPTION_PASSPHRASE` — новий надійний секрет (не той, що в локальному `.env`).
+  **Зберегти в надійному місці**: без нього зашифровані поля в базі (і в бекапах) не прочитати.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SMTP_PASSWORD`
+
+`CLIENT_ORIGIN`, `GOOGLE_CALLBACK_URL`, `MONGODB_URI` і `UPLOAD_DIR` виводяться автоматично в
+`docker-compose.yml` з `DOMAIN` та паролю Mongo.
+
+### 5. Google OAuth
+
+У [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 2.0 Client →
+**Authorized redirect URIs** додати `https://<DOMAIN>/api/auth/google/callback`.
+
+### 6. Запуск
+
+```bash
+cd /opt/numenor/ns-manager-backend/deploy
+docker compose up -d --build
+docker compose ps                      # усі сервіси running/healthy
+curl https://<DOMAIN>/api/health       # {"status":"ok",...,"mongo":"connected"}
+```
+
+### 7. Перший executive-акаунт
+
+База стартує порожньою:
+
+```bash
+docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Damon Executive" "<google-email>"
+```
+
+Далі акаунти створюються через UI (сторінка «Користувачі»).
+
+### 8. Бекапи
+
+Файли й база тепер лише на цьому сервері — бекапи обов'язкові.
+
+```bash
+crontab -e
+# щоночі о 03:15, зберігаються 14 днів у /var/backups/numenor
+15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
+```
+
+Бекап на тому ж сервері не захищає від втрати самого сервера — варто додатково копіювати
+`/var/backups/numenor` на інше сховище (`rsync` на інший сервер / Storage Box) та/або увімкнути
+автоматичні знімки сервера в панелі провайдера.
+
+Відновлення з бекапу (з теки `deploy/`):
+
+```bash
+B=/var/backups/numenor/<дата>
+docker compose exec -T mongo sh -c 'mongorestore -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --archive --gzip --drop' < $B/mongo.archive.gz
+docker compose exec -T api tar -C /app/uploads -xzf - < $B/uploads.tar.gz
+```
+
+### Оновлення
+
+```bash
+cd /opt/numenor/ns-manager-backend && git pull
+cd /opt/numenor/ns-manager-client && git pull
+cd /opt/numenor/ns-manager-backend/deploy && docker compose up -d --build
+docker image prune -f
+```
+
+Дані (`mongo-data`, `uploads`, сертифікати) лежать у Docker volumes і переживають перезбірку.
+**Не** виконувати `docker compose down -v` — це видалить volumes разом з базою та файлами.
+
+### Корисне
+
+```bash
+docker compose logs -f api             # логи бекенда
+docker compose restart api
+docker compose exec mongo sh -c 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" numenor --authenticationDatabase admin'
+```
