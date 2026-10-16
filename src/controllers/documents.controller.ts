@@ -59,9 +59,9 @@ export async function download(req: Request, res: Response): Promise<void> {
     throw new HttpError(404, 'File missing in storage');
   }
 
-  res.setHeader('Content-Type', object.contentType || document.mimeType);
+  res.setHeader('Content-Type', document.mimeType);
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(document.originalName)}"`);
-  if (object.contentLength) res.setHeader('Content-Length', object.contentLength);
+  res.setHeader('Content-Length', object.contentLength);
   object.body.pipe(res);
 }
 

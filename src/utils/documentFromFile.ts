@@ -5,7 +5,7 @@ import { uploadToStorage } from '../config/storage';
 
 export async function documentFromFile(file: Express.Multer.File, client: Types.ObjectId, uploadedBy: Types.ObjectId) {
   const key = `${Date.now()}-${crypto.randomUUID()}${path.extname(file.originalname)}`;
-  await uploadToStorage(key, file.buffer, file.mimetype);
+  await uploadToStorage(key, file.buffer);
 
   return {
     client,
