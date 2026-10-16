@@ -30,7 +30,6 @@ services:
       MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/numenor?authSource=admin
       UPLOAD_DIR: /app/uploads
       CLIENT_ORIGIN: https://${DOMAIN}
-      GOOGLE_CALLBACK_URL: https://${DOMAIN}/api/auth/google/callback
     volumes:
       - uploads:/app/uploads
     depends_on:

@@ -1,13 +1,13 @@
 # Numenor Backend
 
-Node.js + Express + MongoDB (Mongoose), TypeScript. RBAC, Google OAuth + email/password auth,
-клієнти/замовлення/продукти/документи, польова шифрація чутливих полів (AES-256-GCM),
-завантажені файли зберігаються на диску самого сервера.
+Node.js + Express + MongoDB (Mongoose), TypeScript. RBAC, власна авторизація (email + пароль,
+сесії в httpOnly cookie), клієнти/замовлення/продукти/документи, польова шифрація чутливих полів
+(AES-256-GCM), завантажені файли зберігаються на диску самого сервера.
 
 ## Розробка
 
 ```bash
-cp .env.example .env   # заповнити значення (Mongo, Google OAuth, SMTP, секрети)
+cp .env.example .env   # заповнити значення (Mongo, SMTP, FIELD_ENCRYPTION_PASSPHRASE)
 npm install
 npm run dev             # tsx watch, http://localhost:5001
 ```
@@ -17,6 +17,23 @@ npm run dev             # tsx watch, http://localhost:5001
 
 Файли (контракти, BOM, фото до звітів) пишуться в `./uploads` (або в `UPLOAD_DIR`, якщо задано).
 Тека в `.gitignore`.
+
+Перший акаунт: `npm run seed:executive -- "you@example.com" "Ім'я Прізвище"` — скрипт виведе
+згенерований пароль.
+
+## Авторизація
+
+- Вхід лише email + пароль (`POST /api/auth/login`). Нових користувачів запрошують зі сторінки
+  «Користувачі» (лист з посиланням на встановлення пароля) або задають пароль напряму.
+- Після входу бекенд створює сесію (колекція `sessions`, зберігається лише SHA-256 хеш токена)
+  і ставить cookie `numenor_session`: `httpOnly`, `SameSite=Strict`, `Path=/api`, `Secure` у
+  продакшені. Тривалість — `SESSION_TTL_HOURS` (за замовчуванням 12 год); прострочені сесії
+  MongoDB видаляє сама (TTL-індекс).
+- `POST /api/auth/logout` видаляє сесію. Усі сесії користувача відкликаються при зміні/скиданні
+  пароля, деактивації та видаленні акаунта.
+- Захист від CSRF: `SameSite=Strict` + перевірка заголовка `Origin` на всіх змінюючих запитах
+  (має збігатися з `CLIENT_ORIGIN`).
+- Ліміт спроб: 10 невдалих входів на IP за 15 хв; так само для forgot/reset/accept-invite.
 
 ## Структура
 
@@ -94,20 +111,14 @@ nano .env
 
 - `DOMAIN` — домен з кроку 1
 - `MONGO_ROOT_PASSWORD` — `openssl rand -hex 24`
-- `SESSION_SECRET`, `JWT_SECRET` — `openssl rand -hex 32`
 - `FIELD_ENCRYPTION_PASSPHRASE` — новий надійний секрет (не той, що в локальному `.env`).
   **Зберегти в надійному місці**: без нього зашифровані поля в базі (і в бекапах) не прочитати.
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SMTP_PASSWORD`
+- `SMTP_PASSWORD` — для листів-запрошень і відновлення пароля
 
-`CLIENT_ORIGIN`, `GOOGLE_CALLBACK_URL`, `MONGODB_URI` і `UPLOAD_DIR` виводяться автоматично в
-`docker-compose.yml` з `DOMAIN` та паролю Mongo.
+`CLIENT_ORIGIN`, `MONGODB_URI` і `UPLOAD_DIR` виводяться автоматично в `docker-compose.yml`
+з `DOMAIN` та паролю Mongo.
 
-### 5. Google OAuth
-
-У [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 2.0 Client →
-**Authorized redirect URIs** додати `https://<DOMAIN>/api/auth/google/callback`.
-
-### 6. Запуск
+### 5. Запуск
 
 ```bash
 cd /opt/numenor/ns-manager-backend/deploy
@@ -116,17 +127,18 @@ docker compose ps                      # усі сервіси running/healthy
 curl https://<DOMAIN>/api/health       # {"status":"ok",...,"mongo":"connected"}
 ```
 
-### 7. Перший executive-акаунт
+### 6. Перший executive-акаунт
 
 База стартує порожньою:
 
 ```bash
-docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Damon Executive" "<google-email>"
+docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Damon Executive"
 ```
 
-Далі акаунти створюються через UI (сторінка «Користувачі»).
+Скрипт виведе згенерований пароль — зберегти його й увійти. Далі акаунти створюються через UI
+(сторінка «Користувачі»).
 
-### 8. Бекапи
+### 7. Бекапи
 
 Файли й база тепер лише на цьому сервері — бекапи обов'язкові.
 

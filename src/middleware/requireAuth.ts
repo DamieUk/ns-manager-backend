@@ -1,27 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from '../utils/HttpError';
-import { verifyToken } from '../utils/jwt';
+import { hashToken } from '../utils/authTokens';
+import { readSessionToken } from '../utils/session';
+import Session from '../models/session.model';
 import User from '../models/user.model';
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    throw new HttpError(401, 'Missing or malformed Authorization header');
-  }
+  const token = readSessionToken(req);
+  if (!token) throw new HttpError(401, 'Not signed in');
 
-  const token = header.slice('Bearer '.length);
+  const session = await Session.findOne({ tokenHash: hashToken(token), expiresAt: { $gt: new Date() } });
+  if (!session) throw new HttpError(401, 'Session expired');
 
-  let payload;
-  try {
-    payload = verifyToken(token);
-  } catch {
-    throw new HttpError(401, 'Invalid or expired token');
-  }
-
-  const user = await User.findById(payload.sub);
-  if (!user || !user.isActive) {
-    throw new HttpError(401, 'User no longer exists');
-  }
+  const user = await User.findById(session.user);
+  if (!user || !user.isActive) throw new HttpError(401, 'User no longer exists');
 
   req.user = user;
   next();

@@ -13,10 +13,8 @@ export interface IUser {
   address: string;
   status: UserStatus;
   email: string;
-  googleEmail: string;
   role: Role;
   permissions: Permission[];
-  googleId?: string;
   avatarUrl?: string;
   isActive: boolean;
   passwordHash?: string;
@@ -46,10 +44,8 @@ const userSchema = new Schema<IUser>(
     address: { type: String, required: true, set: (v?: string) => encryptField(v?.trim()), get: decryptField },
     status: { type: String, enum: USER_STATUSES, required: true, default: 'working' },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    googleEmail: { type: String, required: true, unique: true, lowercase: true, trim: true },
     role: { type: String, enum: ROLES, required: true, default: 'employee' },
     permissions: { type: [permissionSchema], default: [] },
-    googleId: { type: String, unique: true, sparse: true },
     avatarUrl: { type: String },
     isActive: { type: Boolean, default: true },
     passwordHash: { type: String, select: false },

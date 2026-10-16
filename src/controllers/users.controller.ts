@@ -6,6 +6,7 @@ import { HttpError } from '../utils/HttpError';
 import { canManageRole, ROLES, ROLE_DEFAULT_PERMISSIONS, Role, Permission } from '../constants/permissions';
 import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS, MIN_PASSWORD_LENGTH } from '../utils/authTokens';
 import { sendInviteEmail } from '../config/mailer';
+import { revokeUserSessions } from '../utils/session';
 
 export async function listUsers(req: Request, res: Response): Promise<void> {
   const users = await User.find().sort({ createdAt: -1 });
@@ -19,7 +20,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 }
 
 export async function createUser(req: Request, res: Response): Promise<void> {
-  const { firstName, lastName, jobTitle, phone, address, status, email, googleEmail, role, permissions } =
+  const { firstName, lastName, jobTitle, phone, address, status, email, role, permissions } =
     req.body as {
       firstName?: string;
       lastName?: string;
@@ -28,7 +29,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
       address?: string;
       status?: UserStatus;
       email?: string;
-      googleEmail?: string;
       role?: Role;
       permissions?: Permission[];
     };
@@ -42,12 +42,8 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   if (!role || !ROLES.includes(role)) throw new HttpError(400, 'Invalid role');
   if (!canManageRole(req.user!.role, role)) throw new HttpError(403, 'Insufficient role to create this account');
 
-  const resolvedGoogleEmail = (googleEmail || email).toLowerCase();
-
-  const existing = await User.findOne({
-    $or: [{ email: email.toLowerCase() }, { googleEmail: resolvedGoogleEmail }],
-  });
-  if (existing) throw new HttpError(409, 'A user with this email or Google email already exists');
+  const existing = await User.findOne({ email: email.toLowerCase() });
+  if (existing) throw new HttpError(409, 'A user with this email already exists');
 
   const user = await User.create({
     firstName,
@@ -57,7 +53,6 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     address,
     status: status || 'working',
     email,
-    googleEmail: resolvedGoogleEmail,
     role,
     permissions: permissions ?? ROLE_DEFAULT_PERMISSIONS[role],
   });
@@ -81,7 +76,7 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
   const user = await User.findById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
 
-  const { firstName, lastName, jobTitle, phone, address, status, googleEmail, role, permissions, isActive } =
+  const { firstName, lastName, jobTitle, phone, address, status, role, permissions, isActive } =
     req.body as {
       firstName?: string;
       lastName?: string;
@@ -89,7 +84,6 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
       phone?: string;
       address?: string;
       status?: UserStatus;
-      googleEmail?: string;
       role?: Role;
       permissions?: Permission[];
       isActive?: boolean;
@@ -118,11 +112,11 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
       else if (wasDeleted) user.isActive = true;
     }
   }
-  if (googleEmail !== undefined) user.googleEmail = googleEmail.toLowerCase();
   if (permissions !== undefined) user.permissions = permissions;
   if (isActive !== undefined) user.isActive = isActive;
 
   await user.save();
+  if (!user.isActive) await revokeUserSessions(user._id);
   res.json(toUserResponse(user));
 }
 
@@ -142,6 +136,7 @@ export async function setPassword(req: Request, res: Response): Promise<void> {
   user.passwordTokenHash = undefined;
   user.passwordTokenExpires = undefined;
   await user.save();
+  await revokeUserSessions(user._id);
 
   res.json({ message: 'ok' });
 }
@@ -160,6 +155,7 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
   }
 
   await DailyProgress.deleteMany({ employee: user._id });
+  await revokeUserSessions(user._id);
   await user.deleteOne();
   res.status(204).send();
 }
@@ -174,7 +170,6 @@ function toUserResponse(user: InstanceType<typeof User>) {
     address: user.address,
     status: user.status,
     email: user.email,
-    googleEmail: user.googleEmail,
     role: user.role,
     permissions: user.permissions,
     avatarUrl: user.avatarUrl ?? null,

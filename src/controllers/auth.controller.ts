@@ -1,7 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import passport from '../config/passport';
-import { signToken } from '../utils/jwt';
 import User, { UserDocument } from '../models/user.model';
 import { HttpError } from '../utils/HttpError';
 import {
@@ -12,6 +10,7 @@ import {
   RESET_TOKEN_TTL_MS,
   MIN_PASSWORD_LENGTH,
 } from '../utils/authTokens';
+import { startSession, endSession, revokeUserSessions } from '../utils/session';
 import { sendInviteEmail, sendPasswordResetEmail } from '../config/mailer';
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
@@ -22,39 +21,8 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 // whether a given email exists at all.
 const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing-normalization', 10);
 
-// `@types/passport-google-oauth20` types `state` as a string (custom payload),
-// but passport-oauth2's actual runtime behavior treats `state: true` as "generate
-// and verify CSRF state via the session" — a real capability the types don't model.
-export const startGoogleAuth = passport.authenticate('google', {
-  scope: ['profile', 'email'],
-  session: false,
-  state: true,
-} as unknown as Parameters<typeof passport.authenticate>[1]);
-
-export function handleGoogleCallback(req: Request, res: Response, next: NextFunction): void {
-  passport.authenticate(
-    'google',
-    { session: false, state: true } as unknown as Parameters<typeof passport.authenticate>[1],
-    (err: unknown, user: UserDocument | false, info?: { message?: string }) => {
-      if (err) {
-        next(err);
-        return;
-      }
-
-      if (!user) {
-        res.redirect(`${CLIENT_ORIGIN}/auth/callback#error=${info?.message || 'auth_failed'}`);
-        return;
-      }
-
-      const token = signToken(user);
-      res.redirect(`${CLIENT_ORIGIN}/auth/callback#token=${token}`);
-    }
-  )(req, res, next);
-}
-
-export function me(req: Request, res: Response): void {
-  const user = req.user!;
-  res.json({
+function toAuthUser(user: UserDocument) {
+  return {
     id: user._id.toString(),
     name: `${user.firstName} ${user.lastName}`,
     email: user.email,
@@ -62,7 +30,11 @@ export function me(req: Request, res: Response): void {
     permissions: user.permissions,
     avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt,
-  });
+  };
+}
+
+export function me(req: Request, res: Response): void {
+  res.json(toAuthUser(req.user!));
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -79,8 +51,13 @@ export async function login(req: Request, res: Response): Promise<void> {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new HttpError(401, 'Невірний email або пароль');
 
-  const token = signToken(user);
-  res.json({ token });
+  await startSession(res, user._id);
+  res.json(toAuthUser(user));
+}
+
+export async function logout(req: Request, res: Response): Promise<void> {
+  await endSession(req, res);
+  res.status(204).send();
 }
 
 async function applyPasswordFromToken(rawToken: string, newPassword: string): Promise<boolean> {
@@ -99,6 +76,7 @@ async function applyPasswordFromToken(rawToken: string, newPassword: string): Pr
   user.passwordTokenHash = undefined;
   user.passwordTokenExpires = undefined;
   await user.save();
+  await revokeUserSessions(user._id);
   return true;
 }
 
