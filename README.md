@@ -183,16 +183,22 @@ mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-tra
                        └─ решта   → web (статичний SPA)
 ```
 
-**1. Сервер і домен.** VPS з Ubuntu 24.04, мінімум 2 vCPU / 4 GB RAM / 40 GB SSD (регіон — ЄС;
-4 GB — бо на сервері збираються образи й працює MySQL). У DNS — **A-запис** домену на IP сервера.
+**1. Сервер і домен.** VPS з Ubuntu 24.04. Для старту достатньо 1 vCPU / 2 GB RAM / 25 GB
+(наприклад Spaceship VPS Standard 1) — разом з swap з кроку 2; якщо стане тісно, перейти на
+2 vCPU / 4 GB. У DNS — **A-запис** домену (наприклад `app.numenorsystems.com`) на IP сервера,
+без нього Caddy не отримає сертифікат.
 
 **2. Підготовка сервера.**
 
 ```bash
 ssh root@<IP>
-apt update && apt upgrade -y
+apt update && apt upgrade -y && apt install -y rsync
 curl -fsSL https://get.docker.com | sh          # Docker + compose plugin
 ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
+
+# swap 2 GB: на 2 GB RAM збирання образів (npm ci, vite build) інакше може впертися в пам'ять
+fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
 ```
 
 Назовні публікуються лише 80/443 (Caddy). MySQL і бекенд доступні тільки всередині Docker-мережі.
@@ -228,20 +234,25 @@ curl https://<DOMAIN>/api/health       # "database":"connected"
 docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Ім'я Прізвище"
 ```
 
-**6. Бекапи.** Щоночі о 03:15, зберігаються 14 днів у `/var/backups/numenor`:
+**6. Бекапи.** Щоночі о 03:15, зберігаються 14 днів у `/var/backups/numenor/<дата>/`: дамп бази
+(`db.sql.gz`) і знімок файлів (`uploads/`). Знімки інкрементальні — файли, що не змінились з
+попереднього бекапу, є жорсткими посиланнями, тож 14 днів історії займають місце приблизно однієї
+копії плюс нові файли.
 
 ```bash
 crontab -e
 15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 ```
 
-Копіювати `/var/backups/numenor` ще кудись (`rsync` на інший сервер / Storage Box) та/або
-увімкнути знімки сервера в панелі провайдера. Відновлення (з теки `deploy/`):
+Бекап на тому ж сервері не захищає від втрати сервера — копіювати `/var/backups/numenor` ще
+кудись (`rsync -aH` на інший сервер / собі) та/або увімкнути знімки сервера в панелі провайдера.
+Відновлення (з теки `deploy/`):
 
 ```bash
 B=/var/backups/numenor/<дата>
 gunzip -c $B/db.sql.gz | docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" numenor'
-docker compose exec -T api tar -C /app/uploads -xzf - < $B/uploads.tar.gz
+UPLOADS=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app/uploads"}}{{.Source}}{{end}}{{end}}' $(docker compose ps -q api))
+rsync -a --delete $B/uploads/ $UPLOADS/
 ```
 
 **Оновлення.**
@@ -249,7 +260,8 @@ docker compose exec -T api tar -C /app/uploads -xzf - < $B/uploads.tar.gz
 ```bash
 cd /opt/numenor/ns-manager-backend && git pull
 cd /opt/numenor/ns-manager-client && git pull
-cd /opt/numenor/ns-manager-backend/deploy && docker compose up -d --build && docker image prune -f
+cd /opt/numenor/ns-manager-backend/deploy && docker compose up -d --build
+docker image prune -f && docker builder prune -f        # старі образи й кеш збірки займають диск
 ```
 
 Дані (`db-data`, `uploads`, сертифікати) лежать у Docker volumes і переживають перезбірку.
