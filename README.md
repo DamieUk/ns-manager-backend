@@ -185,8 +185,9 @@ mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-tra
 
 **1. Сервер і домен.** VPS з Ubuntu 24.04. Для старту достатньо 1 vCPU / 2 GB RAM / 25 GB
 (наприклад Spaceship VPS Standard 1) — разом з swap з кроку 2; якщо стане тісно, перейти на
-2 vCPU / 4 GB. У DNS — **A-запис** домену (наприклад `app.numenorsystems.com`) на IP сервера,
-без нього Caddy не отримає сертифікат.
+2 vCPU / 4 GB. У DNS (Spaceship → AdvancedDNS) — **A-запис** `@` домену (`nsportal.app`) на IP
+сервера замість записів-заглушок, а `www` — CNAME на `@` (Caddy перенаправить www на основний
+домен). Без цього Caddy не отримає сертифікат.
 
 **2. Підготовка сервера.**
 
