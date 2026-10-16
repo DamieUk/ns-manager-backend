@@ -7,6 +7,7 @@ import {
   listEmployeeOrders,
   listOrders,
   Order,
+  batchTotal,
   orderJson,
   roundMoney,
   saveOrder,
@@ -19,6 +20,9 @@ import { contractJson, listOrderAnnexes } from '../models/contract.model';
 import { countClientDocuments, documentJson, findDocumentsByIds, resolveDocs } from '../models/document.model';
 import { findUserById, findUsersByIds, User, userRefJson } from '../models/user.model';
 import { listEntries } from '../models/dailyProgress.model';
+import { invoiceJson, invoiceTotals, listInvoices } from '../models/invoice.model';
+import { listPurchases, purchaseJson } from '../models/purchase.model';
+import { getCompany, vatRateOf } from '../models/company.model';
 import { HttpError } from '../utils/HttpError';
 import { byId, castId, castIds, castNumber } from '../utils/validate';
 import { normalizeToUTCMidnight } from '../utils/normalizeDate';
@@ -41,30 +45,30 @@ async function assertValidEmployees(employeeIds: string[]): Promise<void> {
   if (valid.length !== employeeIds.length) throw new HttpError(400, 'One or more assignedEmployees are invalid');
 }
 
-const PRICE_FIELDS = ['quoteAmount', 'quoteCurrency', 'exchangeRate', 'priceUah'] as const;
+const PRICE_FIELDS = ['unitQuote', 'quoteCurrency', 'exchangeRate', 'unitPrice'] as const;
 type PriceInput = Partial<Record<(typeof PRICE_FIELDS)[number], unknown>>;
 
 const blankToUndefined = (value: unknown) => (value === null || value === '' ? undefined : value);
 
-// Applies the quote and the agreed UAH price from a request body. A UAH quote needs no rate;
-// otherwise the UAH price follows amount × rate unless it is given explicitly. Only owners set
-// prices, and once the batch is invoiced its price is locked.
+// Applies the quote and the agreed UAH price (both per board, without VAT) from a request body.
+// A UAH quote needs no rate; otherwise the UAH price follows quote × rate unless it is given
+// explicitly. Only owners set prices, and once the batch is invoiced its price is locked.
 function applyPrice(order: Order, body: PriceInput, user: Express.Request['user']): void {
   if (!PRICE_FIELDS.some((k) => body[k] !== undefined)) return;
   if (user!.role !== 'executive') throw new HttpError(403, 'Ціну партії встановлює лише власник');
 
   const before = PRICE_FIELDS.map((k) => order[k]);
-  const amount = body.quoteAmount !== undefined ? castNumber(blankToUndefined(body.quoteAmount), 'quoteAmount') ?? undefined : order.quoteAmount;
+  const quote = body.unitQuote !== undefined ? castNumber(blankToUndefined(body.unitQuote), 'unitQuote') ?? undefined : order.unitQuote;
   const currency = body.quoteCurrency !== undefined ? (blankToUndefined(body.quoteCurrency) as Currency | undefined) : order.quoteCurrency;
   if (currency !== undefined && !CURRENCIES.includes(currency)) throw new HttpError(400, 'Invalid quoteCurrency');
   let rate = body.exchangeRate !== undefined ? castNumber(blankToUndefined(body.exchangeRate), 'exchangeRate') ?? undefined : order.exchangeRate;
   if (currency === 'UAH') rate = 1;
-  let priceUah = body.priceUah !== undefined ? castNumber(blankToUndefined(body.priceUah), 'priceUah') ?? undefined : order.priceUah;
-  if (body.priceUah === undefined && amount !== undefined && rate !== undefined && (amount !== order.quoteAmount || rate !== order.exchangeRate)) {
-    priceUah = roundMoney(amount * rate);
+  let unitPrice = body.unitPrice !== undefined ? castNumber(blankToUndefined(body.unitPrice), 'unitPrice') ?? undefined : order.unitPrice;
+  if (body.unitPrice === undefined && quote !== undefined && rate !== undefined && (quote !== order.unitQuote || rate !== order.exchangeRate)) {
+    unitPrice = roundMoney(quote * rate);
   }
 
-  Object.assign(order, { quoteAmount: amount, quoteCurrency: currency, exchangeRate: rate, priceUah });
+  Object.assign(order, { unitQuote: quote, quoteCurrency: currency, exchangeRate: rate, unitPrice });
   const changed = PRICE_FIELDS.some((k, i) => order[k] !== before[i]);
   if (changed && isPriceLocked(order)) {
     throw new HttpError(409, 'Ціна партії зафіксована: щоб змінити її, поверніть партію на етап «Погодження»');
@@ -121,10 +125,11 @@ function toOrderResponse(order: Order, refs: OrderRefs, gate?: GateContext) {
     assignedEmployees: assignedEmployees.map(personJson),
     createdAt: order.createdAt,
     ...(gate && {
-      quoteAmount: order.quoteAmount ?? null,
+      unitQuote: order.unitQuote ?? null,
       quoteCurrency: order.quoteCurrency ?? null,
       exchangeRate: order.exchangeRate ?? null,
-      priceUah: order.priceUah ?? null,
+      unitPrice: order.unitPrice ?? null,
+      total: batchTotal(order) ?? null,
       priceLocked: isPriceLocked(order),
       nextStage: nextStage(order.stage) ?? null,
       blockers: nextStageBlockers(order, gate),
@@ -157,12 +162,15 @@ export async function getById(req: Request, res: Response): Promise<void> {
     throw new HttpError(403, 'You are not assigned to this order');
   }
 
-  const [docs, events, entries, annexes, gates] = await Promise.all([
+  const [docs, events, entries, annexes, invoices, purchases, gates, company] = await Promise.all([
     findDocumentsByIds(order.documents),
     listStageEvents(order.id),
     listEntries({ orderId: order.id }),
     isOwner ? listOrderAnnexes(order.id) : Promise.resolve([]),
+    isOwner ? listInvoices({ orderIds: [order.id] }) : Promise.resolve([]),
+    isOwner ? listPurchases({ orderIds: [order.id] }) : Promise.resolve([]),
     isOwner ? loadGateContexts([order]) : undefined,
+    getCompany(),
   ]);
   const annexDocs = byId(await findDocumentsByIds([...new Set(annexes.flatMap((a) => a.documents))]));
   const eventUsers = byId(await findUsersByIds([...new Set(events.flatMap((e) => (e.userId ? [e.userId] : [])))]));
@@ -202,6 +210,19 @@ export async function getById(req: Request, res: Response): Promise<void> {
       annexes: annexes.map((a) =>
         contractJson(a, { documents: resolveDocs(a.documents, annexDocs).map((d) => documentJson(d, { withId: true })) })
       ),
+      invoices: invoices.map(invoiceJson),
+      payments: (() => {
+        const { invoiced, invoicedWithVat, paid } = invoiceTotals(invoices);
+        return {
+          invoiced,
+          invoicedWithVat,
+          paid,
+          toInvoice: Math.max(roundMoney((batchTotal(order) ?? 0) - invoiced), 0),
+          awaiting: Math.max(roundMoney(invoicedWithVat - paid), 0),
+          vatRate: vatRateOf(company),
+        };
+      })(),
+      purchases: purchases.map(purchaseJson),
     }),
   });
 }
@@ -280,10 +301,10 @@ export async function create(req: Request, res: Response): Promise<void> {
       description,
       dueDate: dueDate ? normalizeToUTCMidnight(dueDate) : undefined,
       managerId: manager || undefined,
-      quoteAmount: draft.quoteAmount,
+      unitQuote: draft.unitQuote,
       quoteCurrency: draft.quoteCurrency,
       exchangeRate: draft.exchangeRate,
-      priceUah: draft.priceUah,
+      unitPrice: draft.unitPrice,
       assignedEmployees: assignedEmployees ?? [],
       documents: documents ?? [],
     },
@@ -307,8 +328,9 @@ export async function update(req: Request, res: Response): Promise<void> {
     if (!(await productExists(product))) throw new HttpError(400, 'product does not exist');
     order.productId = castId(product);
   }
-  if (quantity !== undefined) {
+  if (quantity !== undefined && quantity !== order.quantity) {
     if (quantity < 1) throw new HttpError(400, 'quantity must be a positive number');
+    if (isPriceLocked(order)) throw new HttpError(409, 'Кількість зафіксована додатком: щоб змінити її, поверніть партію на етап «Погодження»');
     order.quantity = quantity;
   }
   if (description !== undefined) {
@@ -359,6 +381,9 @@ export async function changeStage(req: Request, res: Response): Promise<void> {
 export async function remove(req: Request, res: Response): Promise<void> {
   const order = await findOrderById(req.params.id);
   if (!order) throw new HttpError(404, 'Order not found');
+  if ((await listInvoices({ orderIds: [order.id] })).length > 0) {
+    throw new HttpError(409, 'Партію з рахунками не видаляють: скасуйте її');
+  }
 
   await deleteOrder(order.id);
   res.status(204).send();

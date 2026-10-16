@@ -6,6 +6,8 @@ import { deleteLists, ListTable, loadLists, saveList } from '../db/lists';
 import { encryptField, decryptField } from '../utils/fieldEncryption';
 import { castId, castNumber, Validator } from '../utils/validate';
 import { isDuplicateKeyError } from '../utils/dbErrors';
+import { deleteOrderInvoices } from './invoice.model';
+import { deleteOrderPurchases } from './purchase.model';
 import {
   Currency,
   CURRENCIES,
@@ -31,10 +33,10 @@ export interface Order {
   stageChangedAt: Date;
   dueDate?: Date;
   managerId?: string;
-  quoteAmount?: number;
+  unitQuote?: number;
   quoteCurrency?: Currency;
   exchangeRate?: number;
-  priceUah?: number;
+  unitPrice?: number;
   assignedEmployees: string[];
   documents: string[];
   createdAt: Date;
@@ -78,10 +80,10 @@ async function withLists(rows: Row[]): Promise<Order[]> {
     stageChangedAt: row.stageChangedAt,
     dueDate: row.dueDate ?? undefined,
     managerId: row.managerId ?? undefined,
-    quoteAmount: row.quoteAmount ?? undefined,
+    unitQuote: row.unitQuote ?? undefined,
     quoteCurrency: (row.quoteCurrency as Currency | null) ?? undefined,
     exchangeRate: row.exchangeRate ?? undefined,
-    priceUah: row.priceUah ?? undefined,
+    unitPrice: row.unitPrice ?? undefined,
     assignedEmployees: employees.get(row.id) ?? [],
     documents: docs.get(row.id) ?? [],
     createdAt: row.createdAt,
@@ -94,17 +96,20 @@ const optionalNumber = (value: unknown, path: string) => castNumber(value, path)
 // Money is kept to the kopiyka (cent), exchange rates to four decimals.
 export const roundMoney = (n: number) => Math.round(n * 100) / 100;
 
+// The batch price without VAT: quantity × the agreed price per board.
+export const batchTotal = (o: Pick<Order, 'unitPrice' | 'quantity'>) => (o.unitPrice === undefined ? undefined : roundMoney(o.unitPrice * o.quantity));
+
 function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) {
   o.quantity = castNumber(o.quantity, 'quantity') as number;
   o.managerId = o.managerId === undefined || o.managerId === null ? undefined : castId(o.managerId, 'manager');
   o.assignedEmployees = (o.assignedEmployees ?? []).map((id) => castId(id, 'assignedEmployees'));
   o.documents = (o.documents ?? []).map((id) => castId(id, 'documents'));
-  o.quoteAmount = optionalNumber(o.quoteAmount, 'quoteAmount');
+  o.unitQuote = optionalNumber(o.unitQuote, 'unitQuote');
   o.quoteCurrency = (o.quoteCurrency as unknown) === '' || o.quoteCurrency === null ? undefined : o.quoteCurrency;
   o.exchangeRate = optionalNumber(o.exchangeRate, 'exchangeRate');
-  o.priceUah = optionalNumber(o.priceUah, 'priceUah');
-  if (o.quoteAmount !== undefined) o.quoteAmount = roundMoney(o.quoteAmount);
-  if (o.priceUah !== undefined) o.priceUah = roundMoney(o.priceUah);
+  o.unitPrice = optionalNumber(o.unitPrice, 'unitPrice');
+  if (o.unitQuote !== undefined) o.unitQuote = roundMoney(o.unitQuote);
+  if (o.unitPrice !== undefined) o.unitPrice = roundMoney(o.unitPrice);
   if (o.exchangeRate !== undefined) o.exchangeRate = Math.round(o.exchangeRate * 10_000) / 10_000;
   o.status = statusOfStage(o.stage);
   new Validator()
@@ -115,9 +120,9 @@ function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) 
     .required(o.description, 'description')
     .oneOf(o.stage, STAGES, 'stage')
     .oneOf(o.quoteCurrency, CURRENCIES, 'quoteCurrency')
-    .min(o.quoteAmount, 0, 'quoteAmount')
+    .min(o.unitQuote, 0, 'unitQuote')
     .min(o.exchangeRate, 0, 'exchangeRate')
-    .min(o.priceUah, 0, 'priceUah')
+    .min(o.unitPrice, 0, 'unitPrice')
     .check();
   return {
     clientId: o.clientId,
@@ -129,10 +134,10 @@ function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) 
     stageChangedAt: o.stageChangedAt,
     dueDate: o.dueDate ?? null,
     managerId: o.managerId ?? null,
-    quoteAmount: o.quoteAmount ?? null,
+    unitQuote: o.unitQuote ?? null,
     quoteCurrency: o.quoteCurrency ?? null,
     exchangeRate: o.exchangeRate ?? null,
-    priceUah: o.priceUah ?? null,
+    unitPrice: o.unitPrice ?? null,
   };
 }
 
@@ -178,10 +183,14 @@ export async function isDocumentOfAssignedOrder(documentId: string, userId: stri
   return Boolean(row);
 }
 
-// Just the client/product links of the given orders (for progress-report responses).
-export async function findOrderLinks(ids: string[]): Promise<Array<Pick<Order, 'id' | 'clientId' | 'productId'>>> {
+// Just the number and client/product links of the given orders (for responses about their
+// progress reports, invoices and purchases).
+export async function findOrderLinks(ids: string[]): Promise<Array<Pick<Order, 'id' | 'number' | 'clientId' | 'productId'>>> {
   if (ids.length === 0) return [];
-  return db().select({ id: orders.id, clientId: orders.clientId, productId: orders.productId }).from(orders).where(inArray(orders.id, ids));
+  return db()
+    .select({ id: orders.id, number: orders.number, clientId: orders.clientId, productId: orders.productId })
+    .from(orders)
+    .where(inArray(orders.id, ids));
 }
 
 // The next free batch number of the year: «26-001», «26-002», ...
@@ -259,6 +268,8 @@ async function deleteOrderRows(ids: string[]): Promise<void> {
     await deleteLists(tx, EMPLOYEES, ids);
     await deleteLists(tx, DOCUMENTS, ids);
     await deleteStageEvents(tx, ids);
+    await deleteOrderInvoices(tx, ids);
+    await deleteOrderPurchases(tx, ids);
     await tx.delete(orders).where(inArray(orders.id, ids));
   });
 }
@@ -285,10 +296,10 @@ export function orderJson(o: Order, people: { manager?: object | null; assignedE
     stage: o.stage,
     stageChangedAt: o.stageChangedAt,
     dueDate: o.dueDate,
-    quoteAmount: o.quoteAmount,
+    unitQuote: o.unitQuote,
     quoteCurrency: o.quoteCurrency,
     exchangeRate: o.exchangeRate,
-    priceUah: o.priceUah,
+    unitPrice: o.unitPrice,
     manager: o.managerId === undefined ? undefined : (people.manager ?? null),
     assignedEmployees: people.assignedEmployees,
     documents: o.documents,

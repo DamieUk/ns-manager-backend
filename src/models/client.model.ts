@@ -4,7 +4,7 @@ import { clients } from '../db/schema';
 import { newId } from '../db/ids';
 import { encryptField, decryptField } from '../utils/fieldEncryption';
 import { castId, castString, Validator } from '../utils/validate';
-import { HttpError } from '../utils/HttpError';
+import { normalizeRequisites } from '../utils/requisites';
 
 export const CLIENT_STATUSES = ['active', 'deleted'] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
@@ -81,22 +81,13 @@ function toColumns(c: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) {
   c.phone = castString(c.phone)?.trim();
   c.address = castString(c.address)?.trim();
   c.notes = castString(c.notes);
-  c.legalName = castString(c.legalName)?.trim();
-  c.edrpou = castString(c.edrpou)?.replace(/\s+/g, '');
-  c.legalAddress = castString(c.legalAddress)?.trim();
-  c.iban = castString(c.iban)?.replace(/\s+/g, '').toUpperCase();
-  c.bankName = castString(c.bankName)?.trim();
-  c.vatNumber = castString(c.vatNumber)?.replace(/\s+/g, '');
-  c.signatory = castString(c.signatory)?.trim();
   new Validator()
     .required(c.name, 'name')
     .required(c.code, 'code')
     .required(c.status, 'status')
     .oneOf(c.status, CLIENT_STATUSES, 'status')
     .check();
-  if (c.edrpou && !/^(\d{8}|\d{10})$/.test(c.edrpou)) throw new HttpError(400, 'ЄДРПОУ має містити 8 цифр (або ІПН ФОП — 10 цифр)');
-  if (c.iban && !/^UA\d{27}$/.test(c.iban)) throw new HttpError(400, 'IBAN має бути у форматі UA + 27 цифр');
-  if (c.vatNumber && !/^\d{10,12}$/.test(c.vatNumber)) throw new HttpError(400, 'ІПН платника ПДВ має містити 10–12 цифр');
+  normalizeRequisites(c);
   return {
     name: c.name,
     code: c.code,

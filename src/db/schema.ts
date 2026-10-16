@@ -160,11 +160,12 @@ export const orders = mysqlTable(
     stageChangedAt: stamp('stage_changed_at').notNull(),
     dueDate: stamp('due_date'),
     managerId: ref('manager_id'),
-    // The quote is priced in the client's currency; once agreed, the batch is fixed in UAH.
-    quoteAmount: money('quote_amount'), // whole batch, in quoteCurrency
+    // Prices are per board, without VAT. The quote is in the client's currency; once agreed, the
+    // batch is fixed in UAH: invoices and delivery notes show quantity × unitPrice, VAT on top.
+    unitQuote: money('unit_quote'), // in quoteCurrency
     quoteCurrency: varchar('quote_currency', { length: 3 }),
     exchangeRate: decimal('exchange_rate', { precision: 12, scale: 4, mode: 'number' }), // UAH per 1 quoteCurrency
-    priceUah: money('price_uah'), // the agreed batch price for the annex and invoices
+    unitPrice: money('unit_price'), // UAH
     ...timestamps(),
   },
   (t) => [
@@ -229,4 +230,70 @@ export const dailyProgress = mysqlTable(
     index('daily_progress_order_id').on(t.orderId),
     index('daily_progress_date').on(t.date),
   ]
+);
+
+// Our own company's requisites for generated invoices and delivery notes: a single row, id 'main'.
+export const company = mysqlTable('company', {
+  id: varchar('id', { length: 16 }).primaryKey(),
+  name: text('name').notNull(), // short name, e.g. «Numenor Systems»
+  legalName: text('legal_name'),
+  edrpou: varchar('edrpou', { length: 10 }),
+  legalAddress: text('legal_address'),
+  iban: varchar('iban', { length: 34 }),
+  bankName: text('bank_name'),
+  bankMfo: varchar('bank_mfo', { length: 6 }), // МФО
+  bankEdrpou: varchar('bank_edrpou', { length: 8 }), // ЄДРПОУ банку
+  vatPayer: boolean('vat_payer').notNull().default(false),
+  vatNumber: varchar('vat_number', { length: 12 }),
+  taxNote: text('tax_note'), // e.g. «Платник єдиного податку 3 групи»
+  signatory: text('signatory'), // e.g. «Директор Іваненко І. І.»
+  phone: varchar('phone', { length: 32 }),
+  email: varchar('email', { length: 255 }),
+  updatedAt: stamp('updated_at').notNull(),
+});
+
+// Invoices (рахунки) for a batch, in UAH. `amount` is without VAT; VAT at `vatRate`, fixed when the
+// invoice is issued, comes on top.
+export const invoices = mysqlTable(
+  'invoices',
+  {
+    id: id(),
+    number: varchar('number', { length: 24 }).notNull(), // «070926-1»: issue date DDMMYY, then the day's sequence
+    orderId: ref('order_id').notNull(),
+    clientId: ref('client_id').notNull(),
+    kind: varchar('kind', { length: 16 }).notNull(), // prepayment | balance | full
+    amount: money('amount').notNull(), // without VAT
+    vatRate: int('vat_rate').notNull(), // 0 or 20 (%)
+    issuedAt: stamp('issued_at').notNull(),
+    dueAt: stamp('due_at'),
+    status: varchar('status', { length: 16 }).notNull(), // issued | paid | cancelled
+    paidAmount: money('paid_amount'), // received, VAT included
+    paidAt: stamp('paid_at'),
+    note: text('note'), // encrypted
+    createdBy: ref('created_by').notNull(),
+    ...timestamps(),
+  },
+  (t) => [uniqueIndex('invoices_number').on(t.number), index('invoices_order_id').on(t.orderId), index('invoices_status').on(t.status)]
+);
+
+// What is bought for a batch: PCBs, components, the stencil, contractor work.
+export const purchases = mysqlTable(
+  'purchases',
+  {
+    id: id(),
+    orderId: ref('order_id').notNull(),
+    category: varchar('category', { length: 16 }).notNull(), // pcb | components | stencil | service | other
+    supplier: varchar('supplier', { length: 64 }).notNull(), // JLCPCB, LCSC, PCBWay, a contractor, ...
+    description: text('description'), // encrypted
+    supplierOrderNo: varchar('supplier_order_no', { length: 64 }),
+    trackingNumber: varchar('tracking_number', { length: 64 }),
+    cost: money('cost'),
+    currency: varchar('currency', { length: 3 }),
+    status: varchar('status', { length: 16 }).notNull(), // planned | ordered | shipped | received | cancelled
+    orderedAt: stamp('ordered_at'),
+    expectedAt: stamp('expected_at'),
+    receivedAt: stamp('received_at'),
+    ...timestamps(),
+  },
+  (t) => [index('purchases_order_id').on(t.orderId), index('purchases_status').on(t.status)]
 );

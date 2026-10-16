@@ -1,21 +1,27 @@
 import { Order } from './order.model';
 import { isSigned, listContractsOfClients, paperStatus } from './contract.model';
+import { isPrepaid, listInvoices } from './invoice.model';
+import { isPurchaseOpen, listPurchases } from './purchase.model';
 import { nextStage, Stage, stageIndex } from './orderStage.model';
 
 // What is known about a batch's papers and payments when deciding whether it may move on.
 export interface GateContext {
   frameworkSigned: boolean;
   annexSigned: boolean;
+  prepaid: boolean;
+  openPurchases: number;
 }
 
 // What a batch needs before it may enter a stage. Moving forward checks the gates of every stage
 // it passes (and reopening a cancelled batch those up to the target); moving back or cancelling
 // is always allowed. These are hard blocks: there is no override.
 const GATES: Array<{ stage: Stage; unmet: (order: Order, ctx: GateContext) => string | false }> = [
-  { stage: 'agreement', unmet: (o) => !(o.quoteAmount && o.quoteCurrency) && 'Вкажіть ціну прорахунку' },
+  { stage: 'agreement', unmet: (o) => !(o.unitQuote && o.quoteCurrency) && 'Вкажіть ціну прорахунку за плату' },
   { stage: 'invoicing', unmet: (_, ctx) => !ctx.frameworkSigned && 'Потрібен підписаний рамковий договір з клієнтом' },
   { stage: 'invoicing', unmet: (_, ctx) => !ctx.annexSigned && 'Потрібен підписаний додаток на цю партію' },
-  { stage: 'invoicing', unmet: (o) => !o.priceUah && 'Зафіксуйте ціну партії в гривнях' },
+  { stage: 'invoicing', unmet: (o) => !o.unitPrice && 'Зафіксуйте ціну за плату в гривнях' },
+  { stage: 'procurement', unmet: (_, ctx) => !ctx.prepaid && 'Чекаємо передоплату' },
+  { stage: 'assembly', unmet: (_, ctx) => ctx.openPurchases > 0 && `Не всі закупівлі отримані (${ctx.openPurchases})` },
 ];
 
 export function stageBlockers(order: Order, ctx: GateContext, target: Stage): string[] {
@@ -33,13 +39,18 @@ export function nextStageBlockers(order: Order, ctx: GateContext): string[] {
   return next ? stageBlockers(order, ctx, next) : [];
 }
 
-// From the invoicing stage on, the batch price is the one in the signed annex and invoices.
+// From the invoicing stage on, the price and quantity are the ones in the signed annex and invoices.
 export function isPriceLocked(order: Order): boolean {
   return stageIndex(order.stage) >= stageIndex('invoicing');
 }
 
 export async function loadGateContexts(orders: Order[]): Promise<Map<string, GateContext>> {
-  const contracts = await listContractsOfClients([...new Set(orders.map((o) => o.clientId))]);
+  const orderIds = orders.map((o) => o.id);
+  const [contracts, invoices, purchases] = await Promise.all([
+    listContractsOfClients([...new Set(orders.map((o) => o.clientId))]),
+    listInvoices({ orderIds }),
+    listPurchases({ orderIds }),
+  ]);
   return new Map(
     orders.map((order) => {
       const own = contracts.filter((c) => c.clientId === order.clientId);
@@ -49,6 +60,8 @@ export async function loadGateContexts(orders: Order[]): Promise<Map<string, Gat
         {
           frameworkSigned: Boolean(framework?.signedAt),
           annexSigned: own.some((c) => c.type === 'annex' && c.orderId === order.id && isSigned(c)),
+          prepaid: isPrepaid(invoices.filter((i) => i.orderId === order.id)),
+          openPurchases: purchases.filter((p) => p.orderId === order.id && isPurchaseOpen(p)).length,
         },
       ];
     })

@@ -10,6 +10,9 @@ import ordersRoutes from './orders.routes';
 import documentsRoutes from './documents.routes';
 import dailyProgressRoutes from './dailyProgress.routes';
 import dashboardRoutes from './dashboard.routes';
+import invoicesRoutes from './invoices.routes';
+import purchasesRoutes from './purchases.routes';
+import companyRoutes from './company.routes';
 
 const router = Router();
 
@@ -23,5 +26,8 @@ router.use('/orders', ordersRoutes);
 router.use('/documents', documentsRoutes);
 router.use('/daily-progress', dailyProgressRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/invoices', invoicesRoutes);
+router.use('/purchases', purchasesRoutes);
+router.use('/company', companyRoutes);
 
 export default router;
