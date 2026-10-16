@@ -195,7 +195,8 @@ mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-tra
 ssh root@<IP>
 apt update && apt upgrade -y && apt install -y rsync
 curl -fsSL https://get.docker.com | sh          # Docker + compose plugin
-ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
+# спершу дозволити свій SSH-порт (у Spaceship VPS це 22022, не 22), інакше ufw відріже доступ
+ufw allow 22022/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw allow 443/udp && ufw --force enable
 
 # swap 2 GB: на 2 GB RAM збирання образів (npm ci, vite build) інакше може впертися в пам'ять
 fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
@@ -203,6 +204,7 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 ```
 
 Назовні публікуються лише 80/443 (Caddy). MySQL і бекенд доступні тільки всередині Docker-мережі.
+Підключення: `ssh -p 22022 root@<IP>`.
 
 **3. Код.** Обидва репозиторії поруч — `docker-compose.yml` збирає клієнт з `../../ns-manager-client`:
 

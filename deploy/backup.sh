@@ -5,6 +5,7 @@
 # Run nightly from cron on the server, e.g.:
 #   15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 set -euo pipefail
+umask 077 # dumps hold password hashes and encrypted fields: root-only
 
 cd "$(dirname "$0")"
 
@@ -16,7 +17,7 @@ DEST="$BACKUP_DIR/$(date +%F_%H%M%S)"
 mkdir -p "$DEST"
 
 docker compose exec -T db sh -c \
-  'exec mysqldump --single-transaction --no-tablespaces -uroot -p"$MYSQL_ROOT_PASSWORD" numenor' \
+  'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysqldump --single-transaction --no-tablespaces -uroot numenor' \
   | gzip > "$DEST/db.sql.gz"
 
 UPLOADS="$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app/uploads"}}{{.Source}}{{end}}{{end}}' "$(docker compose ps -q api)")"
