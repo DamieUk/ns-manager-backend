@@ -60,6 +60,14 @@ export const clients = mysqlTable(
     phone: text('phone'), // encrypted
     address: text('address'), // encrypted
     notes: text('notes'), // encrypted
+    // Requisites for generated invoices and delivery notes (all encrypted).
+    legalName: text('legal_name'),
+    edrpou: text('edrpou'), // ЄДРПОУ (8 digits) or a sole trader's ІПН (10 digits)
+    legalAddress: text('legal_address'),
+    iban: text('iban'),
+    bankName: text('bank_name'),
+    vatNumber: text('vat_number'), // ІПН платника ПДВ
+    signatory: text('signatory'), // who signs on the client's side, e.g. «Директор Іваненко І. І.»
     ...timestamps(),
   },
   (t) => [uniqueIndex('code').on(t.code)]
@@ -74,6 +82,7 @@ export const documents = mysqlTable(
     originalName: text('original_name').notNull(),
     mimeType: varchar('mime_type', { length: 255 }).notNull(),
     size: int('size').notNull(),
+    type: varchar('type', { length: 32 }).notNull().default('other'), // see DOCUMENT_TYPES
     uploadedBy: ref('uploaded_by').notNull(),
     ...timestamps(),
   },
@@ -86,13 +95,17 @@ export const contracts = mysqlTable(
     id: id(),
     title: text('title').notNull(),
     clientId: ref('client_id').notNull(),
+    type: varchar('type', { length: 16 }).notNull().default('framework'), // nda | framework | annex
+    number: varchar('number', { length: 64 }),
+    signedAt: stamp('signed_at'),
+    orderId: ref('order_id'), // the batch an annex covers
     startDate: stamp('start_date'),
     endDate: stamp('end_date'),
     status: varchar('status', { length: 16 }).notNull(),
     notes: text('notes'), // encrypted
     ...timestamps(),
   },
-  (t) => [index('contracts_client_id').on(t.clientId)]
+  (t) => [index('contracts_client_id').on(t.clientId), index('contracts_order_id').on(t.orderId)]
 );
 
 export const contractDocuments = mysqlTable(

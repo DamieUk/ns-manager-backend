@@ -107,7 +107,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
   let photoId: string | undefined;
   if (file) {
-    const photoDoc = await createDocument(await documentFromFile(file, orderDoc.clientId, req.user!.id));
+    const photoDoc = await createDocument(await documentFromFile(file, orderDoc.clientId, req.user!.id, 'photo'));
     photoId = photoDoc.id;
   }
 
@@ -157,7 +157,7 @@ export async function update(req: Request, res: Response): Promise<void> {
         deleteFromStorage(oldPhoto.filename).catch(() => {});
       }
     }
-    const photoDoc = await createDocument(await documentFromFile(file, orderDoc.clientId, req.user!.id));
+    const photoDoc = await createDocument(await documentFromFile(file, orderDoc.clientId, req.user!.id, 'photo'));
     entry.photoId = photoDoc.id;
   }
 

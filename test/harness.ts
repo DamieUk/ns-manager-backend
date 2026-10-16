@@ -209,7 +209,7 @@ export function normalizeSteps(steps: Step[]): Step[] {
         return `<day${offset >= 0 ? '+' : ''}${offset}>`;
       }
       if (STORAGE_KEY.test(value)) return `<file${path.extname(value)}>`;
-      return value.replace(/[0-9a-f]{24}|<id:\d+>/g, id);
+      return value.replace(/(?<![0-9a-f])[0-9a-f]{24}(?![0-9a-f])|<id:\d+>/g, id);
     }
     return value;
   };

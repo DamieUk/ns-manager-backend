@@ -68,7 +68,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   let product: Product | undefined;
   const uploadedDocs: Doc[] = [];
   try {
-    const bomDoc = bomFile ? await createDocument(await documentFromFile(bomFile, clientId, req.user!.id)) : null;
+    const bomDoc = bomFile ? await createDocument(await documentFromFile(bomFile, clientId, req.user!.id, 'bom')) : null;
     if (bomDoc) uploadedDocs.push(bomDoc);
     const additionalDocs: Doc[] = [];
     for (const file of additionalFiles) {

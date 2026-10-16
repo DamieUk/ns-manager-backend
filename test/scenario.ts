@@ -133,7 +133,21 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   // ---- clients
   const pdf = (name: string) => upload(`%PDF-1.4 ${name}`, 'application/pdf', name);
   const png = (name: string) => upload(Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]), 'image/png', name);
-  rec('create client without contract', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1' }) }));
+  const requisites = {
+    legalName: ' ТОВ «Омега Девайсіз» ',
+    edrpou: '1234 5678',
+    legalAddress: 'м. Харків, вул. Сумська, 1',
+    iban: 'ua21 3223 1300 0002 6007 2335 6600 1',
+    bankName: 'АТ «ПриватБанк»',
+    vatNumber: '123456789012',
+    signatory: 'Директор Коваль І. І.',
+  };
+  const c4 = rec('create client without papers', await exec.req('POST', '/clients', {
+    form: form({ name: 'Omega Devices', code: 'omg-04', ...requisites }),
+  }))._id;
+  rec('create client invalid EDRPOU', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', edrpou: '123' }) }));
+  rec('create client invalid IBAN', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', iban: 'DE89370400440532013000' }) }));
+  rec('create client invalid VAT number', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1', vatNumber: 'abc' }) }));
   rec('create client contract not pdf', await exec.req('POST', '/clients', { form: form({ name: 'X', code: 'X-1' }, { contract: [png('c.png')] }) }));
   rec('create client missing code', await exec.req('POST', '/clients', { form: form({ name: 'X' }, { contract: [pdf('c.pdf')] }) }));
   const c1 = rec('create client borysfen', await exec.req('POST', '/clients', {
@@ -163,11 +177,30 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('update client empty name', await exec.req('PUT', `/clients/${c3}`, { json: { name: '' } }));
   rec('employee lists clients', await olena.req('GET', '/clients'));
   rec('co-owner lists clients', await partner.req('GET', '/clients'));
+  rec('update client requisites', await exec.req('PUT', `/clients/${c4}`, {
+    json: { iban: '', bankName: 'АТ «Ощадбанк»', signatory: 'Директорка Коваль І. І.' },
+  }));
+  rec('update client invalid IBAN', await exec.req('PUT', `/clients/${c4}`, { json: { iban: 'UA12' } }));
 
   // ---- contracts
   rec('list contracts', await exec.req('GET', '/contracts'));
   rec('list contracts by client', await exec.req('GET', `/contracts?client=${c1}`));
-  rec('create contract missing title', await exec.req('POST', '/contracts', { json: { client: c1 } }));
+  rec('create contract invalid type', await exec.req('POST', '/contracts', { json: { client: c1, type: 'lease' } }));
+  await tick();
+  rec('create NDA with signed scan', await exec.req('POST', '/contracts', {
+    form: form({ client: c1, type: 'nda', number: '7', signedAt: day(-40) }, { files: [pdf('nda-borysfen.pdf')] }),
+  }));
+  await tick();
+  const k0 = rec('create framework contract without title', await exec.req('POST', '/contracts', {
+    json: { client: c4, type: 'framework', number: '12/2026' },
+  }))._id;
+  rec('omega papers before signing', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
+  rec('mark framework contract signed with scan', await exec.req('PUT', `/contracts/${k0}`, {
+    form: form({ signedAt: day(-2) }, { files: [pdf('framework-omega-signed.pdf')] }),
+  }));
+  rec('omega papers after signing', await exec.req('GET', `/clients/${c4}`), (r) => (r.data as Body).papers);
+  rec('borysfen papers', await exec.req('GET', `/clients/${c1}`), (r) => (r.data as Body).papers);
+  rec('list clients with papers', await exec.req('GET', '/clients'));
   rec('create contract unknown client', await exec.req('POST', '/contracts', { json: { title: 'X', client: UNKNOWN_ID } }));
   rec('create contract invalid status', await exec.req('POST', '/contracts', { json: { title: 'X', client: c2, status: 'signed' } }));
   await tick();
@@ -200,6 +233,13 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   const d2 = rec('upload document 2', await exec.req('POST', '/documents', { form: form({ client: c1 }, { file: [upload(Buffer.from([0xff, 0xd8, 0xff, 9]), 'image/jpeg', 'фото плати.jpg')] }) }))._id;
   await tick();
   const dOther = rec('upload document for other client', await exec.req('POST', '/documents', { form: form({ client: c2 }, { file: [pdf('alpha-spec.pdf')] }) }))._id;
+  await tick();
+  const dq = rec('upload document with type', await exec.req('POST', '/documents', {
+    form: form({ client: c1, type: 'quote' }, { file: [pdf('quote-borysfen.pdf')] }),
+  }))._id;
+  rec('upload document invalid type', await exec.req('POST', '/documents', { form: form({ client: c1, type: 'receipt' }, { file: [pdf('bad-type.pdf')] }) }));
+  rec('change document type', await exec.req('PUT', `/documents/${dq}`, { json: { type: 'invoice' } }));
+  rec('change document invalid type', await exec.req('PUT', `/documents/${dq}`, { json: { type: 'receipt' } }));
   rec('list documents', await exec.req('GET', '/documents'));
   rec('list documents by client', await exec.req('GET', `/documents?client=${c1}`));
   rec('get document', await exec.req('GET', `/documents/${d1}`));
@@ -215,6 +255,7 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   }));
   rec('download unknown document', await exec.req('GET', `/documents/${UNKNOWN_ID}/download`));
   rec('employee lists documents', await olena.req('GET', '/documents'));
+  rec('employee changes document type', await olena.req('PUT', `/documents/${dq}`, { json: { type: 'other' } }));
 
   // ---- products
   rec('create product missing fields', await exec.req('POST', '/products', { form: form({ name: 'X' }) }));
@@ -298,6 +339,11 @@ export async function runScenario(server: TestServer, execPassword: string): Pro
   rec('update order invalid status', await exec.req('PUT', `/orders/${o2}`, { json: { status: 'x' } }));
   rec('update order foreign documents', await exec.req('PUT', `/orders/${o1}`, { json: { documents: [dOther] } }));
   rec('update order documents', await exec.req('PUT', `/orders/${o1}`, { json: { documents: [d2], description: 'Партія 1 (уточнено)' } }));
+  rec('create annex for batch', await exec.req('POST', '/contracts', { json: { client: c1, type: 'annex', number: '1', signedAt: day(-1), order: o1 } }));
+  rec('annex for another client batch', await exec.req('POST', '/contracts', { json: { client: c2, type: 'annex', order: o1 } }));
+  rec('nda linked to batch', await exec.req('POST', '/contracts', { json: { client: c1, type: 'nda', order: o1 } }));
+  rec('annex for unknown batch', await exec.req('POST', '/contracts', { json: { client: c1, type: 'annex', order: UNKNOWN_ID } }));
+  rec('list annexes', await exec.req('GET', `/contracts?client=${c1}&type=annex`));
 
   // ---- daily progress
   const jpg = (name: string) => upload(Buffer.from([0xff, 0xd8, 0xff, 0xe0, name.length]), 'image/jpeg', name);

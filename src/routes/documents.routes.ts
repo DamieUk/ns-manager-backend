@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { list, getById, uploadDocument, download, remove } from '../controllers/documents.controller';
+import { list, getById, uploadDocument, download, update, remove } from '../controllers/documents.controller';
 import { requireAuth } from '../middleware/requireAuth';
 import { requirePermission } from '../middleware/requirePermission';
 import { upload } from '../middleware/upload';
@@ -12,6 +12,7 @@ router.get('/', requirePermission('ORDERS', 'view'), list);
 router.get('/:id', getById);
 router.get('/:id/download', download);
 router.post('/', requirePermission('ORDERS', 'modify'), upload.single('file'), uploadDocument);
+router.put('/:id', requirePermission('ORDERS', 'modify'), update);
 router.delete('/:id', requirePermission('ORDERS', 'modify'), remove);
 
 export default router;

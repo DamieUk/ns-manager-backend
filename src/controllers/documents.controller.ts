@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createDocument, deleteDocument, Doc, documentJson, findDocumentById, listDocuments } from '../models/document.model';
+import { createDocument, deleteDocument, Doc, DocumentType, documentJson, findDocumentById, listDocuments, setDocumentType } from '../models/document.model';
 import { clientExists } from '../models/client.model';
 import { HttpError } from '../utils/HttpError';
 import { castId } from '../utils/validate';
@@ -31,16 +31,26 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function uploadDocument(req: Request, res: Response): Promise<void> {
   const file = req.file;
-  const { client } = req.body as { client?: string };
+  const { client, type } = req.body as { client?: string; type?: DocumentType };
 
   if (!file) throw new HttpError(400, 'file is required');
   if (!client) throw new HttpError(400, 'client is required');
 
   if (!(await clientExists(client))) throw new HttpError(400, 'client does not exist');
 
-  const document = await createDocument(await documentFromFile(file, castId(client), req.user!.id));
+  const document = await createDocument(await documentFromFile(file, castId(client), req.user!.id, type || 'other'));
 
   res.status(201).json(documentJson(document));
+}
+
+// Re-classifies a file (e.g. an «other» upload that is really the client's NDA).
+export async function update(req: Request, res: Response): Promise<void> {
+  const document = await findDocumentById(req.params.id);
+  if (!document) throw new HttpError(404, 'Document not found');
+
+  const { type } = req.body as { type?: unknown };
+  if (type !== undefined) await setDocumentType(document, type);
+  res.json(documentJson(document));
 }
 
 export async function download(req: Request, res: Response): Promise<void> {

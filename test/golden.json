@@ -863,10 +863,44 @@
     }
   },
   {
-    "step": "create client without contract",
+    "step": "create client without papers",
+    "status": 201,
+    "body": {
+      "_id": "<id:6>",
+      "bankName": "АТ «ПриватБанк»",
+      "code": "OMG-04",
+      "createdAt": "<ts>",
+      "edrpou": "12345678",
+      "iban": "UA213223130000026007233566001",
+      "id": "<id:6>",
+      "legalAddress": "м. Харків, вул. Сумська, 1",
+      "legalName": "ТОВ «Омега Девайсіз»",
+      "name": "Omega Devices",
+      "signatory": "Директор Коваль І. І.",
+      "status": "active",
+      "updatedAt": "<ts>",
+      "vatNumber": "123456789012"
+    }
+  },
+  {
+    "step": "create client invalid EDRPOU",
     "status": 400,
     "body": {
-      "message": "contract PDF file is required"
+      "message": "ЄДРПОУ має містити 8 цифр (або ІПН ФОП — 10 цифр)"
+    }
+  },
+  {
+    "step": "create client invalid IBAN",
+    "status": 400,
+    "body": {
+      "message": "IBAN має бути у форматі UA + 27 цифр"
+    }
+  },
+  {
+    "step": "create client invalid VAT number",
+    "status": 400,
+    "body": {
+      "message": "ІПН платника ПДВ має містити 10–12 цифр"
     }
   },
   {
@@ -887,13 +921,13 @@
     "step": "create client borysfen",
     "status": 201,
     "body": {
-      "_id": "<id:6>",
+      "_id": "<id:7>",
       "address": "Київ",
       "code": "BOR-01",
       "contactName": "Андрій",
       "createdAt": "<ts>",
       "email": "info@borysfen.ua",
-      "id": "<id:6>",
+      "id": "<id:7>",
       "name": "Борисфен Електронікс",
       "notes": "VIP клієнт",
       "phone": "+380 44 222",
@@ -905,10 +939,10 @@
     "step": "create client alpha",
     "status": 201,
     "body": {
-      "_id": "<id:7>",
+      "_id": "<id:8>",
       "code": "ALP-02",
       "createdAt": "<ts>",
-      "id": "<id:7>",
+      "id": "<id:8>",
       "name": "alpha systems",
       "status": "active",
       "updatedAt": "<ts>"
@@ -918,11 +952,11 @@
     "step": "create client zeta",
     "status": 201,
     "body": {
-      "_id": "<id:8>",
+      "_id": "<id:9>",
       "code": "ZET-03",
       "createdAt": "<ts>",
       "email": "hello@zeta.io",
-      "id": "<id:8>",
+      "id": "<id:9>",
       "name": "Zeta Labs",
       "status": "active",
       "updatedAt": "<ts>"
@@ -945,34 +979,78 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:8>",
+        "_id": "<id:6>",
+        "bankName": "АТ «ПриватБанк»",
+        "code": "OMG-04",
+        "createdAt": "<ts>",
+        "edrpou": "12345678",
+        "iban": "UA213223130000026007233566001",
+        "id": "<id:6>",
+        "legalAddress": "м. Харків, вул. Сумська, 1",
+        "legalName": "ТОВ «Омега Девайсіз»",
+        "name": "Omega Devices",
+        "papers": {
+          "framework": null,
+          "nda": null
+        },
+        "signatory": "Директор Коваль І. І.",
+        "status": "active",
+        "updatedAt": "<ts>",
+        "vatNumber": "123456789012"
+      },
+      {
+        "_id": "<id:9>",
         "code": "ZET-03",
         "createdAt": "<ts>",
         "email": "hello@zeta.io",
-        "id": "<id:8>",
+        "id": "<id:9>",
         "name": "Zeta Labs",
+        "papers": {
+          "framework": {
+            "contractId": "<id:10>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:8>",
+        "code": "ALP-02",
+        "createdAt": "<ts>",
+        "id": "<id:8>",
+        "name": "alpha systems",
+        "papers": {
+          "framework": {
+            "contractId": "<id:11>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "status": "active",
         "updatedAt": "<ts>"
       },
       {
         "_id": "<id:7>",
-        "code": "ALP-02",
-        "createdAt": "<ts>",
-        "id": "<id:7>",
-        "name": "alpha systems",
-        "status": "active",
-        "updatedAt": "<ts>"
-      },
-      {
-        "_id": "<id:6>",
         "address": "Київ",
         "code": "BOR-01",
         "contactName": "Андрій",
         "createdAt": "<ts>",
         "email": "info@borysfen.ua",
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс",
         "notes": "VIP клієнт",
+        "papers": {
+          "framework": {
+            "contractId": "<id:12>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "phone": "+380 44 222",
         "status": "active",
         "updatedAt": "<ts>"
@@ -983,99 +1061,114 @@
     "step": "get client",
     "status": 200,
     "body": {
-      "_id": "<id:6>",
+      "_id": "<id:7>",
       "address": "Київ",
       "code": "BOR-01",
       "contactName": "Андрій",
       "contracts": [
         {
-          "_id": "<id:9>",
-          "client": "<id:6>",
+          "_id": "<id:12>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "documents": [
             {
-              "_id": "<id:10>",
-              "client": "<id:6>",
+              "_id": "<id:13>",
+              "client": "<id:7>",
               "createdAt": "<ts>",
               "filename": "<file.pdf>",
-              "id": "<id:10>",
+              "id": "<id:13>",
               "mimeType": "application/pdf",
               "originalName": "contract-borysfen.pdf",
               "size": 30,
+              "type": "framework_contract",
               "updatedAt": "<ts>",
               "uploadedBy": "<id:1>"
             },
             {
-              "_id": "<id:11>",
-              "client": "<id:6>",
+              "_id": "<id:14>",
+              "client": "<id:7>",
               "createdAt": "<ts>",
               "filename": "<file.png>",
-              "id": "<id:11>",
+              "id": "<id:14>",
               "mimeType": "image/png",
               "originalName": "drawing.png",
               "size": 7,
+              "type": "other",
               "updatedAt": "<ts>",
               "uploadedBy": "<id:1>"
             },
             {
-              "_id": "<id:12>",
-              "client": "<id:6>",
+              "_id": "<id:15>",
+              "client": "<id:7>",
               "createdAt": "<ts>",
               "filename": "<file.pdf>",
-              "id": "<id:12>",
+              "id": "<id:15>",
               "mimeType": "application/pdf",
               "originalName": "spec-a.pdf",
               "size": 19,
+              "type": "other",
               "updatedAt": "<ts>",
               "uploadedBy": "<id:1>"
             }
           ],
-          "id": "<id:9>",
+          "id": "<id:12>",
           "status": "active",
           "title": "Рамковий договір",
+          "type": "framework",
           "updatedAt": "<ts>"
         }
       ],
       "createdAt": "<ts>",
       "documents": [
         {
-          "_id": "<id:10>",
-          "client": "<id:6>",
+          "_id": "<id:13>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.pdf>",
           "mimeType": "application/pdf",
           "originalName": "contract-borysfen.pdf",
           "size": 30,
+          "type": "framework_contract",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
         {
-          "_id": "<id:11>",
-          "client": "<id:6>",
+          "_id": "<id:14>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.png>",
           "mimeType": "image/png",
           "originalName": "drawing.png",
           "size": 7,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
         {
-          "_id": "<id:12>",
-          "client": "<id:6>",
+          "_id": "<id:15>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.pdf>",
           "mimeType": "application/pdf",
           "originalName": "spec-a.pdf",
           "size": 19,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         }
       ],
       "email": "info@borysfen.ua",
-      "id": "<id:6>",
+      "id": "<id:7>",
       "name": "Борисфен Електронікс",
       "notes": "VIP клієнт",
+      "papers": {
+        "framework": {
+          "contractId": "<id:12>",
+          "number": null,
+          "signedAt": null
+        },
+        "nda": null
+      },
       "phone": "+380 44 222",
       "status": "active",
       "updatedAt": "<ts>"
@@ -1099,11 +1192,11 @@
     "step": "update client",
     "status": 200,
     "body": {
-      "_id": "<id:8>",
+      "_id": "<id:9>",
       "code": "ZET-03",
       "createdAt": "<ts>",
       "email": "new@zeta.io",
-      "id": "<id:8>",
+      "id": "<id:9>",
       "name": "Zeta Labs",
       "notes": "",
       "phone": "+1 555 0100",
@@ -1137,36 +1230,80 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:8>",
+        "_id": "<id:6>",
+        "bankName": "АТ «ПриватБанк»",
+        "code": "OMG-04",
+        "createdAt": "<ts>",
+        "edrpou": "12345678",
+        "iban": "UA213223130000026007233566001",
+        "id": "<id:6>",
+        "legalAddress": "м. Харків, вул. Сумська, 1",
+        "legalName": "ТОВ «Омега Девайсіз»",
+        "name": "Omega Devices",
+        "papers": {
+          "framework": null,
+          "nda": null
+        },
+        "signatory": "Директор Коваль І. І.",
+        "status": "active",
+        "updatedAt": "<ts>",
+        "vatNumber": "123456789012"
+      },
+      {
+        "_id": "<id:9>",
         "code": "ZET-03",
         "createdAt": "<ts>",
         "email": "new@zeta.io",
-        "id": "<id:8>",
+        "id": "<id:9>",
         "name": "Zeta Labs",
         "notes": "",
+        "papers": {
+          "framework": {
+            "contractId": "<id:10>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "phone": "+1 555 0100",
         "status": "active",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:7>",
+        "_id": "<id:8>",
         "code": "ALP-02",
         "createdAt": "<ts>",
-        "id": "<id:7>",
+        "id": "<id:8>",
         "name": "alpha systems",
+        "papers": {
+          "framework": {
+            "contractId": "<id:11>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "status": "active",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:6>",
+        "_id": "<id:7>",
         "address": "Київ",
         "code": "BOR-01",
         "contactName": "Андрій",
         "createdAt": "<ts>",
         "email": "info@borysfen.ua",
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс",
         "notes": "VIP клієнт",
+        "papers": {
+          "framework": {
+            "contractId": "<id:12>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "phone": "+380 44 222",
         "status": "active",
         "updatedAt": "<ts>"
@@ -1174,57 +1311,87 @@
     ]
   },
   {
+    "step": "update client requisites",
+    "status": 200,
+    "body": {
+      "_id": "<id:6>",
+      "bankName": "АТ «Ощадбанк»",
+      "code": "OMG-04",
+      "createdAt": "<ts>",
+      "edrpou": "12345678",
+      "iban": "",
+      "id": "<id:6>",
+      "legalAddress": "м. Харків, вул. Сумська, 1",
+      "legalName": "ТОВ «Омега Девайсіз»",
+      "name": "Omega Devices",
+      "signatory": "Директорка Коваль І. І.",
+      "status": "active",
+      "updatedAt": "<ts>",
+      "vatNumber": "123456789012"
+    }
+  },
+  {
+    "step": "update client invalid IBAN",
+    "status": 400,
+    "body": {
+      "message": "IBAN має бути у форматі UA + 27 цифр"
+    }
+  },
+  {
     "step": "list contracts",
     "status": 200,
     "body": [
       {
-        "_id": "<id:13>",
+        "_id": "<id:10>",
         "client": {
-          "_id": "<id:8>",
-          "id": "<id:8>",
+          "_id": "<id:9>",
+          "id": "<id:9>",
           "name": "Zeta Labs"
-        },
-        "createdAt": "<ts>",
-        "documents": [
-          "<id:14>"
-        ],
-        "id": "<id:13>",
-        "status": "active",
-        "title": "Zeta Labs — Договір",
-        "updatedAt": "<ts>"
-      },
-      {
-        "_id": "<id:15>",
-        "client": {
-          "_id": "<id:7>",
-          "id": "<id:7>",
-          "name": "alpha systems"
         },
         "createdAt": "<ts>",
         "documents": [
           "<id:16>"
         ],
-        "id": "<id:15>",
+        "id": "<id:10>",
         "status": "active",
-        "title": "alpha systems — Договір",
+        "title": "Zeta Labs — Договір",
+        "type": "framework",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:9>",
+        "_id": "<id:11>",
         "client": {
-          "_id": "<id:6>",
-          "id": "<id:6>",
+          "_id": "<id:8>",
+          "id": "<id:8>",
+          "name": "alpha systems"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:17>"
+        ],
+        "id": "<id:11>",
+        "status": "active",
+        "title": "alpha systems — Договір",
+        "type": "framework",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:12>",
+        "client": {
+          "_id": "<id:7>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "createdAt": "<ts>",
         "documents": [
-          "<id:10>",
-          "<id:12>",
-          "<id:11>"
+          "<id:13>",
+          "<id:15>",
+          "<id:14>"
         ],
-        "id": "<id:9>",
+        "id": "<id:12>",
         "status": "active",
         "title": "Рамковий договір",
+        "type": "framework",
         "updatedAt": "<ts>"
       }
     ]
@@ -1234,31 +1401,219 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:9>",
+        "_id": "<id:12>",
         "client": {
-          "_id": "<id:6>",
-          "id": "<id:6>",
+          "_id": "<id:7>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "createdAt": "<ts>",
         "documents": [
-          "<id:10>",
-          "<id:12>",
-          "<id:11>"
+          "<id:13>",
+          "<id:15>",
+          "<id:14>"
         ],
-        "id": "<id:9>",
+        "id": "<id:12>",
         "status": "active",
         "title": "Рамковий договір",
+        "type": "framework",
         "updatedAt": "<ts>"
       }
     ]
   },
   {
-    "step": "create contract missing title",
+    "step": "create contract invalid type",
     "status": 400,
     "body": {
-      "message": "title is required"
+      "message": "Invalid type"
     }
+  },
+  {
+    "step": "create NDA with signed scan",
+    "status": 201,
+    "body": {
+      "_id": "<id:18>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "documents": [
+        "<id:19>"
+      ],
+      "id": "<id:18>",
+      "number": "7",
+      "signedAt": "<day-40>",
+      "status": "active",
+      "title": "NDA № 7",
+      "type": "nda",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create framework contract without title",
+    "status": 201,
+    "body": {
+      "_id": "<id:20>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "documents": [],
+      "id": "<id:20>",
+      "number": "12/2026",
+      "status": "draft",
+      "title": "Договір № 12/2026",
+      "type": "framework",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "omega papers before signing",
+    "status": 200,
+    "body": {
+      "framework": {
+        "contractId": "<id:20>",
+        "number": "12/2026",
+        "signedAt": null
+      },
+      "nda": null
+    }
+  },
+  {
+    "step": "mark framework contract signed with scan",
+    "status": 200,
+    "body": {
+      "_id": "<id:20>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "documents": [
+        "<id:21>"
+      ],
+      "id": "<id:20>",
+      "number": "12/2026",
+      "signedAt": "<day-2>",
+      "status": "active",
+      "title": "Договір № 12/2026",
+      "type": "framework",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "omega papers after signing",
+    "status": 200,
+    "body": {
+      "framework": {
+        "contractId": "<id:20>",
+        "number": "12/2026",
+        "signedAt": "<day-2>"
+      },
+      "nda": null
+    }
+  },
+  {
+    "step": "borysfen papers",
+    "status": 200,
+    "body": {
+      "framework": {
+        "contractId": "<id:12>",
+        "number": null,
+        "signedAt": null
+      },
+      "nda": {
+        "contractId": "<id:18>",
+        "number": "7",
+        "signedAt": "<day-40>"
+      }
+    }
+  },
+  {
+    "step": "list clients with papers",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:6>",
+        "bankName": "АТ «Ощадбанк»",
+        "code": "OMG-04",
+        "createdAt": "<ts>",
+        "edrpou": "12345678",
+        "iban": "",
+        "id": "<id:6>",
+        "legalAddress": "м. Харків, вул. Сумська, 1",
+        "legalName": "ТОВ «Омега Девайсіз»",
+        "name": "Omega Devices",
+        "papers": {
+          "framework": {
+            "contractId": "<id:20>",
+            "number": "12/2026",
+            "signedAt": "<day-2>"
+          },
+          "nda": null
+        },
+        "signatory": "Директорка Коваль І. І.",
+        "status": "active",
+        "updatedAt": "<ts>",
+        "vatNumber": "123456789012"
+      },
+      {
+        "_id": "<id:9>",
+        "code": "ZET-03",
+        "createdAt": "<ts>",
+        "email": "new@zeta.io",
+        "id": "<id:9>",
+        "name": "Zeta Labs",
+        "notes": "",
+        "papers": {
+          "framework": {
+            "contractId": "<id:10>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
+        "phone": "+1 555 0100",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:8>",
+        "code": "ALP-02",
+        "createdAt": "<ts>",
+        "id": "<id:8>",
+        "name": "alpha systems",
+        "papers": {
+          "framework": {
+            "contractId": "<id:11>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:7>",
+        "address": "Київ",
+        "code": "BOR-01",
+        "contactName": "Андрій",
+        "createdAt": "<ts>",
+        "email": "info@borysfen.ua",
+        "id": "<id:7>",
+        "name": "Борисфен Електронікс",
+        "notes": "VIP клієнт",
+        "papers": {
+          "framework": {
+            "contractId": "<id:12>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": {
+            "contractId": "<id:18>",
+            "number": "7",
+            "signedAt": "<day-40>"
+          }
+        },
+        "phone": "+380 44 222",
+        "status": "active",
+        "updatedAt": "<ts>"
+      }
+    ]
   },
   {
     "step": "create contract unknown client",
@@ -1278,16 +1633,17 @@
     "step": "create contract",
     "status": 201,
     "body": {
-      "_id": "<id:17>",
-      "client": "<id:7>",
+      "_id": "<id:22>",
+      "client": "<id:8>",
       "createdAt": "<ts>",
       "documents": [],
       "endDate": "<day+300>",
-      "id": "<id:17>",
+      "id": "<id:22>",
       "notes": "Секретно",
       "startDate": "<day-30>",
       "status": "draft",
       "title": "Додаткова угода",
+      "type": "framework",
       "updatedAt": "<ts>"
     }
   },
@@ -1295,14 +1651,15 @@
     "step": "create contract with exact start time",
     "status": 201,
     "body": {
-      "_id": "<id:18>",
-      "client": "<id:8>",
+      "_id": "<id:23>",
+      "client": "<id:9>",
       "createdAt": "<ts>",
       "documents": [],
-      "id": "<id:18>",
+      "id": "<id:23>",
       "startDate": "<ts>",
       "status": "draft",
       "title": "Timed",
+      "type": "framework",
       "updatedAt": "<ts>"
     }
   },
@@ -1315,20 +1672,21 @@
     "step": "get contract",
     "status": 200,
     "body": {
-      "_id": "<id:17>",
+      "_id": "<id:22>",
       "client": {
-        "_id": "<id:7>",
-        "id": "<id:7>",
+        "_id": "<id:8>",
+        "id": "<id:8>",
         "name": "alpha systems"
       },
       "createdAt": "<ts>",
       "documents": [],
       "endDate": "<day+300>",
-      "id": "<id:17>",
+      "id": "<id:22>",
       "notes": "Секретно",
       "startDate": "<day-30>",
       "status": "draft",
       "title": "Додаткова угода",
+      "type": "framework",
       "updatedAt": "<ts>"
     }
   },
@@ -1336,16 +1694,17 @@
     "step": "update contract",
     "status": 200,
     "body": {
-      "_id": "<id:17>",
-      "client": "<id:7>",
+      "_id": "<id:22>",
+      "client": "<id:8>",
       "createdAt": "<ts>",
       "documents": [],
       "endDate": "<day+400>",
-      "id": "<id:17>",
+      "id": "<id:22>",
       "notes": "Оновлено",
       "startDate": "<day-30>",
       "status": "active",
       "title": "Угода №2",
+      "type": "framework",
       "updatedAt": "<ts>"
     }
   },
@@ -1414,13 +1773,14 @@
     "step": "upload document",
     "status": 201,
     "body": {
-      "_id": "<id:19>",
-      "client": "<id:6>",
+      "_id": "<id:24>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "filename": "<file.xlsx>",
       "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "originalName": "bom-rev-a.xlsx",
       "size": 31,
+      "type": "other",
       "updatedAt": "<ts>",
       "uploadedBy": "<id:1>"
     }
@@ -1429,13 +1789,14 @@
     "step": "upload document 2",
     "status": 201,
     "body": {
-      "_id": "<id:20>",
-      "client": "<id:6>",
+      "_id": "<id:25>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "filename": "<file.jpg>",
       "mimeType": "image/jpeg",
       "originalName": "фото плати.jpg",
       "size": 4,
+      "type": "other",
       "updatedAt": "<ts>",
       "uploadedBy": "<id:1>"
     }
@@ -1444,15 +1805,62 @@
     "step": "upload document for other client",
     "status": 201,
     "body": {
-      "_id": "<id:21>",
-      "client": "<id:7>",
+      "_id": "<id:26>",
+      "client": "<id:8>",
       "createdAt": "<ts>",
       "filename": "<file.pdf>",
       "mimeType": "application/pdf",
       "originalName": "alpha-spec.pdf",
       "size": 23,
+      "type": "other",
       "updatedAt": "<ts>",
       "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "upload document with type",
+    "status": 201,
+    "body": {
+      "_id": "<id:27>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "filename": "<file.pdf>",
+      "mimeType": "application/pdf",
+      "originalName": "quote-borysfen.pdf",
+      "size": 27,
+      "type": "quote",
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "upload document invalid type",
+    "status": 400,
+    "body": {
+      "message": "`receipt` is not a valid enum value for path `type`."
+    }
+  },
+  {
+    "step": "change document type",
+    "status": 200,
+    "body": {
+      "_id": "<id:27>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "filename": "<file.pdf>",
+      "mimeType": "application/pdf",
+      "originalName": "quote-borysfen.pdf",
+      "size": 27,
+      "type": "invoice",
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "change document invalid type",
+    "status": 400,
+    "body": {
+      "message": "`receipt` is not a valid enum value for path `type`."
     }
   },
   {
@@ -1460,90 +1868,134 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:21>",
-        "client": "<id:7>",
+        "_id": "<id:26>",
+        "client": "<id:8>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "alpha-spec.pdf",
         "size": 23,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:19>",
-        "client": "<id:6>",
+        "_id": "<id:24>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.xlsx>",
         "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "originalName": "bom-rev-a.xlsx",
         "size": 31,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:16>",
-        "client": "<id:7>",
+        "_id": "<id:17>",
+        "client": "<id:8>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-alpha.pdf",
         "size": 27,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:10>",
-        "client": "<id:6>",
+        "_id": "<id:13>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-borysfen.pdf",
         "size": 30,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:14>",
-        "client": "<id:8>",
+        "_id": "<id:16>",
+        "client": "<id:9>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-zeta.pdf",
         "size": 26,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:11>",
-        "client": "<id:6>",
+        "_id": "<id:14>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.png>",
         "mimeType": "image/png",
         "originalName": "drawing.png",
         "size": 7,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:12>",
+        "_id": "<id:21>",
         "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "framework-omega-signed.pdf",
+        "size": 35,
+        "type": "framework_contract",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:19>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "nda-borysfen.pdf",
+        "size": 25,
+        "type": "nda",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:27>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "quote-borysfen.pdf",
+        "size": 27,
+        "type": "invoice",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:15>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "spec-a.pdf",
         "size": 19,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:20>",
-        "client": "<id:6>",
+        "_id": "<id:25>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.jpg>",
         "mimeType": "image/jpeg",
         "originalName": "фото плати.jpg",
         "size": 4,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       }
@@ -1554,57 +2006,86 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:19>",
-        "client": "<id:6>",
+        "_id": "<id:24>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.xlsx>",
         "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "originalName": "bom-rev-a.xlsx",
         "size": 31,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:10>",
-        "client": "<id:6>",
+        "_id": "<id:13>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-borysfen.pdf",
         "size": 30,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:11>",
-        "client": "<id:6>",
+        "_id": "<id:14>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.png>",
         "mimeType": "image/png",
         "originalName": "drawing.png",
         "size": 7,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:12>",
-        "client": "<id:6>",
+        "_id": "<id:19>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "nda-borysfen.pdf",
+        "size": 25,
+        "type": "nda",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:27>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "quote-borysfen.pdf",
+        "size": 27,
+        "type": "invoice",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:15>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "spec-a.pdf",
         "size": 19,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:20>",
-        "client": "<id:6>",
+        "_id": "<id:25>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.jpg>",
         "mimeType": "image/jpeg",
         "originalName": "фото плати.jpg",
         "size": 4,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       }
@@ -1614,13 +2095,14 @@
     "step": "get document",
     "status": 200,
     "body": {
-      "_id": "<id:19>",
-      "client": "<id:6>",
+      "_id": "<id:24>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "filename": "<file.xlsx>",
       "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "originalName": "bom-rev-a.xlsx",
       "size": 31,
+      "type": "other",
       "updatedAt": "<ts>",
       "uploadedBy": "<id:1>"
     }
@@ -1658,6 +2140,13 @@
     }
   },
   {
+    "step": "employee changes document type",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:modify permission"
+    }
+  },
+  {
     "step": "create product missing fields",
     "status": 400,
     "body": {
@@ -1689,16 +2178,16 @@
     "step": "create PCB",
     "status": 201,
     "body": {
-      "_id": "<id:22>",
+      "_id": "<id:28>",
       "additionalFiles": [
-        "<id:23>",
-        "<id:24>"
+        "<id:29>",
+        "<id:30>"
       ],
-      "bomFile": "<id:25>",
-      "client": "<id:6>",
+      "bomFile": "<id:31>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "4 шари, ENIG",
-      "id": "<id:22>",
+      "id": "<id:28>",
       "name": "Плата керування",
       "sku": "PCB-100",
       "type": "PCB",
@@ -1709,11 +2198,11 @@
     "step": "create component",
     "status": 201,
     "body": {
-      "_id": "<id:26>",
+      "_id": "<id:32>",
       "additionalFiles": [],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
-      "id": "<id:26>",
+      "id": "<id:32>",
       "name": "Antenna",
       "sku": "ANT-7",
       "type": "Component",
@@ -1724,11 +2213,11 @@
     "step": "create product for alpha",
     "status": 201,
     "body": {
-      "_id": "<id:27>",
+      "_id": "<id:33>",
       "additionalFiles": [],
-      "client": "<id:7>",
+      "client": "<id:8>",
       "createdAt": "<ts>",
-      "id": "<id:27>",
+      "id": "<id:33>",
       "name": "Box",
       "sku": "BOX-1",
       "type": "Other",
@@ -1745,7 +2234,7 @@
   {
     "step": "uploads after products",
     "status": 0,
-    "body": 11
+    "body": 14
   },
   {
     "step": "list products without client",
@@ -1759,60 +2248,63 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:26>",
+        "_id": "<id:32>",
         "additionalFiles": [],
-        "client": "<id:6>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
-        "id": "<id:26>",
+        "id": "<id:32>",
         "name": "Antenna",
         "sku": "ANT-7",
         "type": "Component",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:22>",
+        "_id": "<id:28>",
         "additionalFiles": [
           {
-            "_id": "<id:24>",
-            "client": "<id:6>",
+            "_id": "<id:30>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.pdf>",
-            "id": "<id:24>",
+            "id": "<id:30>",
             "mimeType": "application/pdf",
             "originalName": "assembly.pdf",
             "size": 21,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           },
           {
-            "_id": "<id:23>",
-            "client": "<id:6>",
+            "_id": "<id:29>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.zip>",
-            "id": "<id:23>",
+            "id": "<id:29>",
             "mimeType": "application/zip",
             "originalName": "gerber.zip",
             "size": 2,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           }
         ],
         "bomFile": {
-          "_id": "<id:25>",
-          "client": "<id:6>",
+          "_id": "<id:31>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.xlsx>",
-          "id": "<id:25>",
+          "id": "<id:31>",
           "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "originalName": "bom-pcb-100.xlsx",
           "size": 31,
+          "type": "bom",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
-        "client": "<id:6>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "description": "4 шари, ENIG",
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування",
         "sku": "PCB-100",
         "type": "PCB",
@@ -1824,49 +2316,52 @@
     "step": "get product",
     "status": 200,
     "body": {
-      "_id": "<id:22>",
+      "_id": "<id:28>",
       "additionalFiles": [
         {
-          "_id": "<id:24>",
-          "client": "<id:6>",
+          "_id": "<id:30>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.pdf>",
-          "id": "<id:24>",
+          "id": "<id:30>",
           "mimeType": "application/pdf",
           "originalName": "assembly.pdf",
           "size": 21,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
         {
-          "_id": "<id:23>",
-          "client": "<id:6>",
+          "_id": "<id:29>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.zip>",
-          "id": "<id:23>",
+          "id": "<id:29>",
           "mimeType": "application/zip",
           "originalName": "gerber.zip",
           "size": 2,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         }
       ],
       "bomFile": {
-        "_id": "<id:25>",
-        "client": "<id:6>",
+        "_id": "<id:31>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "filename": "<file.xlsx>",
-        "id": "<id:25>",
+        "id": "<id:31>",
         "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "originalName": "bom-pcb-100.xlsx",
         "size": 31,
+        "type": "bom",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "4 шари, ENIG",
-      "id": "<id:22>",
+      "id": "<id:28>",
       "name": "Плата керування",
       "sku": "PCB-100",
       "type": "PCB",
@@ -1877,15 +2372,15 @@
     "step": "update product",
     "status": 200,
     "body": {
-      "_id": "<id:26>",
+      "_id": "<id:32>",
       "additionalFiles": [
-        "<id:20>",
-        "<id:19>"
+        "<id:25>",
+        "<id:24>"
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Gain 5 dBi",
-      "id": "<id:26>",
+      "id": "<id:32>",
       "name": "Antenna v2",
       "sku": "ANT-7",
       "type": "Component",
@@ -1903,15 +2398,15 @@
     "step": "update product clear BOM",
     "status": 200,
     "body": {
-      "_id": "<id:22>",
+      "_id": "<id:28>",
       "additionalFiles": [
-        "<id:23>",
-        "<id:24>"
+        "<id:29>",
+        "<id:30>"
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "4 шари, ENIG",
-      "id": "<id:22>",
+      "id": "<id:28>",
       "name": "Плата керування",
       "sku": "PCB-100",
       "type": "PCB",
@@ -1922,37 +2417,39 @@
     "step": "get product without BOM",
     "status": 200,
     "body": {
-      "_id": "<id:22>",
+      "_id": "<id:28>",
       "additionalFiles": [
         {
-          "_id": "<id:24>",
-          "client": "<id:6>",
+          "_id": "<id:30>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.pdf>",
-          "id": "<id:24>",
+          "id": "<id:30>",
           "mimeType": "application/pdf",
           "originalName": "assembly.pdf",
           "size": 21,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
         {
-          "_id": "<id:23>",
-          "client": "<id:6>",
+          "_id": "<id:29>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.zip>",
-          "id": "<id:23>",
+          "id": "<id:29>",
           "mimeType": "application/zip",
           "originalName": "gerber.zip",
           "size": 2,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "4 шари, ENIG",
-      "id": "<id:22>",
+      "id": "<id:28>",
       "name": "Плата керування",
       "sku": "PCB-100",
       "type": "PCB",
@@ -1963,16 +2460,16 @@
     "step": "update product restore BOM",
     "status": 200,
     "body": {
-      "_id": "<id:22>",
+      "_id": "<id:28>",
       "additionalFiles": [
-        "<id:23>",
-        "<id:24>"
+        "<id:29>",
+        "<id:30>"
       ],
-      "bomFile": "<id:25>",
-      "client": "<id:6>",
+      "bomFile": "<id:31>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "4 шари, ENIG",
-      "id": "<id:22>",
+      "id": "<id:28>",
       "name": "Плата керування",
       "sku": "PCB-100",
       "type": "PCB",
@@ -1991,86 +2488,91 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:26>",
+        "_id": "<id:32>",
         "additionalFiles": [
           {
-            "_id": "<id:19>",
-            "client": "<id:6>",
+            "_id": "<id:24>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.xlsx>",
-            "id": "<id:19>",
+            "id": "<id:24>",
             "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "originalName": "bom-rev-a.xlsx",
             "size": 31,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           },
           {
-            "_id": "<id:20>",
-            "client": "<id:6>",
+            "_id": "<id:25>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.jpg>",
-            "id": "<id:20>",
+            "id": "<id:25>",
             "mimeType": "image/jpeg",
             "originalName": "фото плати.jpg",
             "size": 4,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           }
         ],
-        "client": "<id:6>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "description": "Gain 5 dBi",
-        "id": "<id:26>",
+        "id": "<id:32>",
         "name": "Antenna v2",
         "sku": "ANT-7",
         "type": "Component",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:22>",
+        "_id": "<id:28>",
         "additionalFiles": [
           {
-            "_id": "<id:24>",
-            "client": "<id:6>",
+            "_id": "<id:30>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.pdf>",
-            "id": "<id:24>",
+            "id": "<id:30>",
             "mimeType": "application/pdf",
             "originalName": "assembly.pdf",
             "size": 21,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           },
           {
-            "_id": "<id:23>",
-            "client": "<id:6>",
+            "_id": "<id:29>",
+            "client": "<id:7>",
             "createdAt": "<ts>",
             "filename": "<file.zip>",
-            "id": "<id:23>",
+            "id": "<id:29>",
             "mimeType": "application/zip",
             "originalName": "gerber.zip",
             "size": 2,
+            "type": "other",
             "updatedAt": "<ts>",
             "uploadedBy": "<id:1>"
           }
         ],
         "bomFile": {
-          "_id": "<id:25>",
-          "client": "<id:6>",
+          "_id": "<id:31>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.xlsx>",
-          "id": "<id:25>",
+          "id": "<id:31>",
           "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "originalName": "bom-pcb-100.xlsx",
           "size": 31,
+          "type": "bom",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         },
-        "client": "<id:6>",
+        "client": "<id:7>",
         "createdAt": "<ts>",
         "description": "4 шари, ENIG",
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування",
         "sku": "PCB-100",
         "type": "PCB",
@@ -2121,11 +2623,11 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:27>",
+        "_id": "<id:33>",
         "additionalFiles": [],
-        "client": "<id:7>",
+        "client": "<id:8>",
         "createdAt": "<ts>",
-        "id": "<id:27>",
+        "id": "<id:33>",
         "name": "Box",
         "sku": "BOX-1",
         "type": "Other",
@@ -2335,7 +2837,7 @@
     "step": "create order",
     "status": 201,
     "body": {
-      "_id": "<id:28>",
+      "_id": "<id:34>",
       "assignedEmployees": [
         {
           "_id": "<id:4>",
@@ -2350,22 +2852,22 @@
           "lastName": "Шевченко"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Партія 1",
       "documents": [
-        "<id:19>",
-        "<id:20>"
+        "<id:24>",
+        "<id:25>"
       ],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
         "lastName": "Partner"
       },
-      "product": "<id:22>",
+      "product": "<id:28>",
       "quantity": 100,
       "status": "active",
       "updatedAt": "<ts>"
@@ -2375,7 +2877,7 @@
     "step": "create order 2",
     "status": 201,
     "body": {
-      "_id": "<id:29>",
+      "_id": "<id:35>",
       "assignedEmployees": [
         {
           "_id": "<id:3>",
@@ -2384,12 +2886,12 @@
           "lastName": "Шевченко"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Антени",
       "documents": [],
-      "id": "<id:29>",
-      "product": "<id:26>",
+      "id": "<id:35>",
+      "product": "<id:32>",
       "quantity": 5,
       "status": "active",
       "updatedAt": "<ts>"
@@ -2399,7 +2901,7 @@
     "step": "create order 3 overdue",
     "status": 201,
     "body": {
-      "_id": "<id:30>",
+      "_id": "<id:36>",
       "assignedEmployees": [
         {
           "_id": "<id:4>",
@@ -2408,19 +2910,19 @@
           "lastName": "Koval"
         }
       ],
-      "client": "<id:7>",
+      "client": "<id:8>",
       "createdAt": "<ts>",
       "description": "Коробки",
       "documents": [],
       "dueDate": "<day-3>",
-      "id": "<id:30>",
+      "id": "<id:36>",
       "manager": {
         "_id": "<id:1>",
         "firstName": "Ivan",
         "id": "<id:1>",
         "lastName": "Executive"
       },
-      "product": "<id:27>",
+      "product": "<id:33>",
       "quantity": 20,
       "status": "active",
       "updatedAt": "<ts>"
@@ -2430,7 +2932,7 @@
     "step": "create order 4 completed",
     "status": 201,
     "body": {
-      "_id": "<id:31>",
+      "_id": "<id:37>",
       "assignedEmployees": [
         {
           "_id": "<id:3>",
@@ -2439,12 +2941,12 @@
           "lastName": "Шевченко"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Готово",
       "documents": [],
-      "id": "<id:31>",
-      "product": "<id:26>",
+      "id": "<id:37>",
+      "product": "<id:32>",
       "quantity": 1,
       "status": "completed",
       "updatedAt": "<ts>"
@@ -2462,15 +2964,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Готово",
         "dueDate": null,
-        "id": "<id:31>",
+        "id": "<id:37>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 1,
@@ -2484,18 +2986,18 @@
           }
         ],
         "client": {
-          "id": "<id:7>",
+          "id": "<id:8>",
           "name": "alpha systems"
         },
         "description": "Коробки",
         "dueDate": "<day-3>",
-        "id": "<id:30>",
+        "id": "<id:36>",
         "manager": {
           "id": "<id:1>",
           "name": "Ivan Executive"
         },
         "product": {
-          "id": "<id:27>",
+          "id": "<id:33>",
           "name": "Box"
         },
         "quantity": 20,
@@ -2509,15 +3011,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Антени",
         "dueDate": null,
-        "id": "<id:29>",
+        "id": "<id:35>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 5,
@@ -2535,18 +3037,18 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Партія 1",
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "manager": {
           "id": "<id:2>",
           "name": "Maria Partner"
         },
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -2566,15 +3068,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Готово",
         "dueDate": null,
-        "id": "<id:31>",
+        "id": "<id:37>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 1,
@@ -2594,18 +3096,18 @@
           }
         ],
         "client": {
-          "id": "<id:7>",
+          "id": "<id:8>",
           "name": "alpha systems"
         },
         "description": "Коробки",
         "dueDate": "<day-3>",
-        "id": "<id:30>",
+        "id": "<id:36>",
         "manager": {
           "id": "<id:1>",
           "name": "Ivan Executive"
         },
         "product": {
-          "id": "<id:27>",
+          "id": "<id:33>",
           "name": "Box"
         },
         "quantity": 20,
@@ -2625,15 +3127,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Готово",
         "dueDate": null,
-        "id": "<id:31>",
+        "id": "<id:37>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 1,
@@ -2647,15 +3149,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Антени",
         "dueDate": null,
-        "id": "<id:29>",
+        "id": "<id:35>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 5,
@@ -2673,18 +3175,18 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Партія 1",
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "manager": {
           "id": "<id:2>",
           "name": "Maria Partner"
         },
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -2707,20 +3209,20 @@
         }
       ],
       "client": {
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс"
       },
       "description": "Партія 1",
       "documents": [
         {
-          "_id": "<id:19>",
+          "_id": "<id:24>",
           "createdAt": "<ts>",
           "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "originalName": "bom-rev-a.xlsx",
           "size": 31
         },
         {
-          "_id": "<id:20>",
+          "_id": "<id:25>",
           "createdAt": "<ts>",
           "mimeType": "image/jpeg",
           "originalName": "фото плати.jpg",
@@ -2728,13 +3230,13 @@
         }
       ],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "id": "<id:2>",
         "name": "Maria Partner"
       },
       "product": {
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування"
       },
       "quantity": 100,
@@ -2756,20 +3258,20 @@
         }
       ],
       "client": {
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс"
       },
       "description": "Партія 1",
       "documents": [
         {
-          "_id": "<id:19>",
+          "_id": "<id:24>",
           "createdAt": "<ts>",
           "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "originalName": "bom-rev-a.xlsx",
           "size": 31
         },
         {
-          "_id": "<id:20>",
+          "_id": "<id:25>",
           "createdAt": "<ts>",
           "mimeType": "image/jpeg",
           "originalName": "фото плати.jpg",
@@ -2777,13 +3279,13 @@
         }
       ],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "id": "<id:2>",
         "name": "Maria Partner"
       },
       "product": {
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування"
       },
       "quantity": 100,
@@ -2815,7 +3317,7 @@
     "step": "update order",
     "status": 200,
     "body": {
-      "_id": "<id:29>",
+      "_id": "<id:35>",
       "assignedEmployees": [
         {
           "_id": "<id:3>",
@@ -2830,19 +3332,19 @@
           "lastName": "Tkach"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Антени",
       "documents": [],
       "dueDate": "<day+5>",
-      "id": "<id:29>",
+      "id": "<id:35>",
       "manager": {
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
         "lastName": "Partner"
       },
-      "product": "<id:26>",
+      "product": "<id:32>",
       "quantity": 8,
       "status": "active",
       "updatedAt": "<ts>"
@@ -2852,7 +3354,7 @@
     "step": "update order clear fields",
     "status": 200,
     "body": {
-      "_id": "<id:29>",
+      "_id": "<id:35>",
       "assignedEmployees": [
         {
           "_id": "<id:3>",
@@ -2867,12 +3369,12 @@
           "lastName": "Tkach"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Антени",
       "documents": [],
-      "id": "<id:29>",
-      "product": "<id:26>",
+      "id": "<id:35>",
+      "product": "<id:32>",
       "quantity": 8,
       "status": "active",
       "updatedAt": "<ts>"
@@ -2910,7 +3412,7 @@
     "step": "update order documents",
     "status": 200,
     "body": {
-      "_id": "<id:28>",
+      "_id": "<id:34>",
       "assignedEmployees": [
         {
           "_id": "<id:4>",
@@ -2925,25 +3427,88 @@
           "lastName": "Шевченко"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Партія 1 (уточнено)",
       "documents": [
-        "<id:20>"
+        "<id:25>"
       ],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "_id": "<id:2>",
         "firstName": "Maria",
         "id": "<id:2>",
         "lastName": "Partner"
       },
-      "product": "<id:22>",
+      "product": "<id:28>",
       "quantity": 100,
       "status": "active",
       "updatedAt": "<ts>"
     }
+  },
+  {
+    "step": "create annex for batch",
+    "status": 201,
+    "body": {
+      "_id": "<id:38>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "documents": [],
+      "id": "<id:38>",
+      "number": "1",
+      "order": "<id:34>",
+      "signedAt": "<day-1>",
+      "status": "active",
+      "title": "Додаток № 1",
+      "type": "annex",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "annex for another client batch",
+    "status": 400,
+    "body": {
+      "message": "order belongs to another client"
+    }
+  },
+  {
+    "step": "nda linked to batch",
+    "status": 400,
+    "body": {
+      "message": "Only an annex can be linked to an order"
+    }
+  },
+  {
+    "step": "annex for unknown batch",
+    "status": 400,
+    "body": {
+      "message": "order does not exist"
+    }
+  },
+  {
+    "step": "list annexes",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:38>",
+        "client": {
+          "_id": "<id:7>",
+          "id": "<id:7>",
+          "name": "Борисфен Електронікс"
+        },
+        "createdAt": "<ts>",
+        "documents": [],
+        "id": "<id:38>",
+        "number": "1",
+        "order": "<id:34>",
+        "signedAt": "<day-1>",
+        "status": "active",
+        "title": "Додаток № 1",
+        "type": "annex",
+        "updatedAt": "<ts>"
+      }
+    ]
   },
   {
     "step": "executive creates progress",
@@ -2990,23 +3555,23 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:32>",
+      "id": "<id:39>",
       "needsRework": 2,
       "notes": "Пайка",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
       "partiallyAssembled": 0,
       "photo": {
-        "_id": "<id:33>",
+        "_id": "<id:40>",
         "mimeType": "image/jpeg",
         "originalName": "progress-1.jpg",
         "size": 5
@@ -3030,17 +3595,17 @@
         "id": "<id:4>",
         "name": "Petro Koval"
       },
-      "id": "<id:34>",
+      "id": "<id:41>",
       "needsRework": 0,
       "notes": "",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
@@ -3058,17 +3623,17 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:35>",
+      "id": "<id:42>",
       "needsRework": 0,
       "notes": "",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:29>",
+        "id": "<id:35>",
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         }
       },
@@ -3079,7 +3644,7 @@
   {
     "step": "uploads after first photo",
     "status": 0,
-    "body": 12
+    "body": 15
   },
   {
     "step": "update progress",
@@ -3091,23 +3656,23 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:32>",
+      "id": "<id:39>",
       "needsRework": 2,
       "notes": "Пайка + перевірка",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
       "partiallyAssembled": 4,
       "photo": {
-        "_id": "<id:36>",
+        "_id": "<id:43>",
         "mimeType": "image/jpeg",
         "originalName": "progress-2.jpg",
         "size": 5
@@ -3117,7 +3682,7 @@
   {
     "step": "uploads after photo replaced",
     "status": 0,
-    "body": 12
+    "body": 15
   },
   {
     "step": "update progress date",
@@ -3129,17 +3694,17 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:35>",
+      "id": "<id:42>",
       "needsRework": 0,
       "notes": "",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:29>",
+        "id": "<id:35>",
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         }
       },
@@ -3186,17 +3751,17 @@
           "id": "<id:4>",
           "name": "Petro Koval"
         },
-        "id": "<id:34>",
+        "id": "<id:41>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
@@ -3210,23 +3775,23 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:32>",
+        "id": "<id:39>",
         "needsRework": 2,
         "notes": "Пайка + перевірка",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
         "partiallyAssembled": 4,
         "photo": {
-          "_id": "<id:36>",
+          "_id": "<id:43>",
           "mimeType": "image/jpeg",
           "originalName": "progress-2.jpg",
           "size": 5
@@ -3239,17 +3804,17 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:35>",
+        "id": "<id:42>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:29>",
+          "id": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           }
         },
@@ -3269,23 +3834,23 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:32>",
+        "id": "<id:39>",
         "needsRework": 2,
         "notes": "Пайка + перевірка",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
         "partiallyAssembled": 4,
         "photo": {
-          "_id": "<id:36>",
+          "_id": "<id:43>",
           "mimeType": "image/jpeg",
           "originalName": "progress-2.jpg",
           "size": 5
@@ -3298,17 +3863,17 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:35>",
+        "id": "<id:42>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:29>",
+          "id": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           }
         },
@@ -3328,17 +3893,17 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:35>",
+        "id": "<id:42>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:29>",
+          "id": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           }
         },
@@ -3358,23 +3923,23 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:32>",
+        "id": "<id:39>",
         "needsRework": 2,
         "notes": "Пайка + перевірка",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
         "partiallyAssembled": 4,
         "photo": {
-          "_id": "<id:36>",
+          "_id": "<id:43>",
           "mimeType": "image/jpeg",
           "originalName": "progress-2.jpg",
           "size": 5
@@ -3400,17 +3965,17 @@
           "id": "<id:4>",
           "name": "Petro Koval"
         },
-        "id": "<id:34>",
+        "id": "<id:41>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
@@ -3429,23 +3994,23 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:32>",
+      "id": "<id:39>",
       "needsRework": 2,
       "notes": "Пайка + перевірка",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
       "partiallyAssembled": 4,
       "photo": {
-        "_id": "<id:36>",
+        "_id": "<id:43>",
         "mimeType": "image/jpeg",
         "originalName": "progress-2.jpg",
         "size": 5
@@ -3469,23 +4034,23 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:32>",
+      "id": "<id:39>",
       "needsRework": 2,
       "notes": "Пайка + перевірка",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
       "partiallyAssembled": 4,
       "photo": {
-        "_id": "<id:36>",
+        "_id": "<id:43>",
         "mimeType": "image/jpeg",
         "originalName": "progress-2.jpg",
         "size": 5
@@ -3524,7 +4089,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Партія 1 (уточнено)",
@@ -3537,7 +4102,7 @@
                 "id": "<id:4>",
                 "name": "Petro Koval"
               },
-              "id": "<id:34>",
+              "id": "<id:41>",
               "needsRework": 0,
               "notes": "",
               "partiallyAssembled": 0
@@ -3549,7 +4114,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:32>",
+              "id": "<id:39>",
               "needsRework": 2,
               "notes": "Пайка + перевірка",
               "partiallyAssembled": 4
@@ -3560,9 +4125,9 @@
             "id": "<id:2>",
             "name": "Maria Partner"
           },
-          "orderId": "<id:28>",
+          "orderId": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           },
           "quantity": 100,
@@ -3586,7 +4151,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Антени",
@@ -3599,7 +4164,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:35>",
+              "id": "<id:42>",
               "needsRework": 0,
               "notes": "",
               "partiallyAssembled": 0
@@ -3607,9 +4172,9 @@
           ],
           "isOverdue": false,
           "manager": null,
-          "orderId": "<id:29>",
+          "orderId": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           },
           "quantity": 8,
@@ -3629,7 +4194,7 @@
             }
           ],
           "client": {
-            "id": "<id:7>",
+            "id": "<id:8>",
             "name": "alpha systems"
           },
           "description": "Коробки",
@@ -3640,9 +4205,9 @@
             "id": "<id:1>",
             "name": "Ivan Executive"
           },
-          "orderId": "<id:30>",
+          "orderId": "<id:36>",
           "product": {
-            "id": "<id:27>",
+            "id": "<id:33>",
             "name": "Box"
           },
           "quantity": 20,
@@ -3675,7 +4240,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Партія 1 (уточнено)",
@@ -3688,7 +4253,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:32>",
+              "id": "<id:39>",
               "needsRework": 2,
               "notes": "Пайка + перевірка",
               "partiallyAssembled": 4
@@ -3699,9 +4264,9 @@
             "id": "<id:2>",
             "name": "Maria Partner"
           },
-          "orderId": "<id:28>",
+          "orderId": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           },
           "quantity": 100,
@@ -3725,7 +4290,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Антени",
@@ -3738,7 +4303,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:35>",
+              "id": "<id:42>",
               "needsRework": 0,
               "notes": "",
               "partiallyAssembled": 0
@@ -3746,9 +4311,9 @@
           ],
           "isOverdue": false,
           "manager": null,
-          "orderId": "<id:29>",
+          "orderId": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           },
           "quantity": 8,
@@ -3768,7 +4333,7 @@
             }
           ],
           "client": {
-            "id": "<id:7>",
+            "id": "<id:8>",
             "name": "alpha systems"
           },
           "description": "Коробки",
@@ -3779,9 +4344,9 @@
             "id": "<id:1>",
             "name": "Ivan Executive"
           },
-          "orderId": "<id:30>",
+          "orderId": "<id:36>",
           "product": {
-            "id": "<id:27>",
+            "id": "<id:33>",
             "name": "Box"
           },
           "quantity": 20,
@@ -3809,15 +4374,15 @@
     "body": [
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 0,
         "dueDate": null,
-        "id": "<id:31>",
+        "id": "<id:37>",
         "isOverdue": false,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 1,
@@ -3826,15 +4391,15 @@
       },
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 3,
         "dueDate": null,
-        "id": "<id:29>",
+        "id": "<id:35>",
         "isOverdue": false,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 8,
@@ -3843,15 +4408,15 @@
       },
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 22,
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "isOverdue": false,
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -3866,15 +4431,15 @@
     "body": [
       {
         "client": {
-          "id": "<id:7>",
+          "id": "<id:8>",
           "name": "alpha systems"
         },
         "completed": 0,
         "dueDate": "<day-3>",
-        "id": "<id:30>",
+        "id": "<id:36>",
         "isOverdue": true,
         "product": {
-          "id": "<id:27>",
+          "id": "<id:33>",
           "name": "Box"
         },
         "quantity": 20,
@@ -3883,15 +4448,15 @@
       },
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 22,
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "isOverdue": false,
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -3910,17 +4475,17 @@
         "id": "<id:3>",
         "name": "Олена Шевченко"
       },
-      "id": "<id:37>",
+      "id": "<id:44>",
       "needsRework": 0,
       "notes": "",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
@@ -3964,17 +4529,17 @@
         "id": "<id:4>",
         "name": "Petro Koval"
       },
-      "id": "<id:34>",
+      "id": "<id:41>",
       "needsRework": 0,
       "notes": "",
       "order": {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
-        "id": "<id:28>",
+        "id": "<id:34>",
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         }
       },
@@ -4007,15 +4572,15 @@
     "body": [
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 3,
         "dueDate": null,
-        "id": "<id:29>",
+        "id": "<id:35>",
         "isOverdue": false,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 8,
@@ -4024,15 +4589,15 @@
       },
       {
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "completed": 22,
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "isOverdue": false,
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -4061,19 +4626,19 @@
         }
       ],
       "client": {
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс"
       },
       "description": "Партія 1 (уточнено)",
       "documents": [],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "id": "<id:2>",
         "name": "Maria Partner"
       },
       "product": {
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування"
       },
       "quantity": 100,
@@ -4084,25 +4649,26 @@
     "step": "product after document delete",
     "status": 200,
     "body": {
-      "_id": "<id:26>",
+      "_id": "<id:32>",
       "additionalFiles": [
         {
-          "_id": "<id:19>",
-          "client": "<id:6>",
+          "_id": "<id:24>",
+          "client": "<id:7>",
           "createdAt": "<ts>",
           "filename": "<file.xlsx>",
-          "id": "<id:19>",
+          "id": "<id:24>",
           "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "originalName": "bom-rev-a.xlsx",
           "size": 31,
+          "type": "other",
           "updatedAt": "<ts>",
           "uploadedBy": "<id:1>"
         }
       ],
-      "client": "<id:6>",
+      "client": "<id:7>",
       "createdAt": "<ts>",
       "description": "Gain 5 dBi",
-      "id": "<id:26>",
+      "id": "<id:32>",
       "name": "Antenna v2",
       "sku": "ANT-7",
       "type": "Component",
@@ -4112,7 +4678,7 @@
   {
     "step": "uploads after document delete",
     "status": 0,
-    "body": 11
+    "body": 14
   },
   {
     "step": "delete product",
@@ -4135,15 +4701,15 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Антени",
         "dueDate": null,
-        "id": "<id:29>",
+        "id": "<id:35>",
         "manager": null,
         "product": {
-          "id": "<id:26>",
+          "id": "<id:32>",
           "name": "Antenna v2"
         },
         "quantity": 8,
@@ -4161,18 +4727,18 @@
           }
         ],
         "client": {
-          "id": "<id:6>",
+          "id": "<id:7>",
           "name": "Борисфен Електронікс"
         },
         "description": "Партія 1 (уточнено)",
         "dueDate": "<day+10>",
-        "id": "<id:28>",
+        "id": "<id:34>",
         "manager": {
           "id": "<id:2>",
           "name": "Maria Partner"
         },
         "product": {
-          "id": "<id:22>",
+          "id": "<id:28>",
           "name": "Плата керування"
         },
         "quantity": 100,
@@ -4262,19 +4828,19 @@
         }
       ],
       "client": {
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс"
       },
       "description": "Партія 1 (уточнено)",
       "documents": [],
       "dueDate": "<day+10>",
-      "id": "<id:28>",
+      "id": "<id:34>",
       "manager": {
         "id": "<id:2>",
         "name": "Maria Partner"
       },
       "product": {
-        "id": "<id:22>",
+        "id": "<id:28>",
         "name": "Плата керування"
       },
       "quantity": 100,
@@ -4292,23 +4858,23 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:32>",
+        "id": "<id:39>",
         "needsRework": 2,
         "notes": "Пайка + перевірка",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:28>",
+          "id": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           }
         },
         "partiallyAssembled": 4,
         "photo": {
-          "_id": "<id:36>",
+          "_id": "<id:43>",
           "mimeType": "image/jpeg",
           "originalName": "progress-2.jpg",
           "size": 5
@@ -4321,17 +4887,17 @@
           "id": "<id:3>",
           "name": "Олена Шевченко"
         },
-        "id": "<id:35>",
+        "id": "<id:42>",
         "needsRework": 0,
         "notes": "",
         "order": {
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
-          "id": "<id:29>",
+          "id": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           }
         },
@@ -4354,7 +4920,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Партія 1 (уточнено)",
@@ -4367,7 +4933,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:32>",
+              "id": "<id:39>",
               "needsRework": 2,
               "notes": "Пайка + перевірка",
               "partiallyAssembled": 4
@@ -4378,9 +4944,9 @@
             "id": "<id:2>",
             "name": "Maria Partner"
           },
-          "orderId": "<id:28>",
+          "orderId": "<id:34>",
           "product": {
-            "id": "<id:22>",
+            "id": "<id:28>",
             "name": "Плата керування"
           },
           "quantity": 100,
@@ -4404,7 +4970,7 @@
             }
           ],
           "client": {
-            "id": "<id:6>",
+            "id": "<id:7>",
             "name": "Борисфен Електронікс"
           },
           "description": "Антени",
@@ -4417,7 +4983,7 @@
                 "id": "<id:3>",
                 "name": "Олена Шевченко"
               },
-              "id": "<id:35>",
+              "id": "<id:42>",
               "needsRework": 0,
               "notes": "",
               "partiallyAssembled": 0
@@ -4425,9 +4991,9 @@
           ],
           "isOverdue": false,
           "manager": null,
-          "orderId": "<id:29>",
+          "orderId": "<id:35>",
           "product": {
-            "id": "<id:26>",
+            "id": "<id:32>",
             "name": "Antenna v2"
           },
           "quantity": 8,
@@ -4453,13 +5019,13 @@
     "step": "mark client deleted",
     "status": 200,
     "body": {
-      "_id": "<id:6>",
+      "_id": "<id:7>",
       "address": "Київ",
       "code": "BOR-01",
       "contactName": "Андрій",
       "createdAt": "<ts>",
       "email": "info@borysfen.ua",
-      "id": "<id:6>",
+      "id": "<id:7>",
       "name": "Борисфен Електронікс",
       "notes": "VIP клієнт",
       "phone": "+380 44 222",
@@ -4472,36 +5038,88 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:8>",
+        "_id": "<id:6>",
+        "bankName": "АТ «Ощадбанк»",
+        "code": "OMG-04",
+        "createdAt": "<ts>",
+        "edrpou": "12345678",
+        "iban": "",
+        "id": "<id:6>",
+        "legalAddress": "м. Харків, вул. Сумська, 1",
+        "legalName": "ТОВ «Омега Девайсіз»",
+        "name": "Omega Devices",
+        "papers": {
+          "framework": {
+            "contractId": "<id:20>",
+            "number": "12/2026",
+            "signedAt": "<day-2>"
+          },
+          "nda": null
+        },
+        "signatory": "Директорка Коваль І. І.",
+        "status": "active",
+        "updatedAt": "<ts>",
+        "vatNumber": "123456789012"
+      },
+      {
+        "_id": "<id:9>",
         "code": "ZET-03",
         "createdAt": "<ts>",
         "email": "new@zeta.io",
-        "id": "<id:8>",
+        "id": "<id:9>",
         "name": "Zeta Labs",
         "notes": "",
+        "papers": {
+          "framework": {
+            "contractId": "<id:10>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "phone": "+1 555 0100",
         "status": "active",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:7>",
+        "_id": "<id:8>",
         "code": "ALP-02",
         "createdAt": "<ts>",
-        "id": "<id:7>",
+        "id": "<id:8>",
         "name": "alpha systems",
+        "papers": {
+          "framework": {
+            "contractId": "<id:22>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": null
+        },
         "status": "active",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:6>",
+        "_id": "<id:7>",
         "address": "Київ",
         "code": "BOR-01",
         "contactName": "Андрій",
         "createdAt": "<ts>",
         "email": "info@borysfen.ua",
-        "id": "<id:6>",
+        "id": "<id:7>",
         "name": "Борисфен Електронікс",
         "notes": "VIP клієнт",
+        "papers": {
+          "framework": {
+            "contractId": "<id:12>",
+            "number": null,
+            "signedAt": null
+          },
+          "nda": {
+            "contractId": "<id:18>",
+            "number": "7",
+            "signedAt": "<day-40>"
+          }
+        },
         "phone": "+380 44 222",
         "status": "deleted",
         "updatedAt": "<ts>"
@@ -4516,7 +5134,7 @@
   {
     "step": "uploads after client purge",
     "status": 0,
-    "body": 3
+    "body": 4
   },
   {
     "step": "get purged client",
@@ -4530,52 +5148,74 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:17>",
+        "_id": "<id:22>",
         "client": {
-          "_id": "<id:7>",
-          "id": "<id:7>",
+          "_id": "<id:8>",
+          "id": "<id:8>",
           "name": "alpha systems"
         },
         "createdAt": "<ts>",
         "documents": [],
         "endDate": "<day+400>",
-        "id": "<id:17>",
+        "id": "<id:22>",
         "notes": "Оновлено",
         "startDate": "<day-30>",
         "status": "active",
         "title": "Угода №2",
+        "type": "framework",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:13>",
+        "_id": "<id:20>",
         "client": {
-          "_id": "<id:8>",
-          "id": "<id:8>",
-          "name": "Zeta Labs"
+          "_id": "<id:6>",
+          "id": "<id:6>",
+          "name": "Omega Devices"
         },
         "createdAt": "<ts>",
         "documents": [
-          "<id:14>"
+          "<id:21>"
         ],
-        "id": "<id:13>",
+        "id": "<id:20>",
+        "number": "12/2026",
+        "signedAt": "<day-2>",
         "status": "active",
-        "title": "Zeta Labs — Договір",
+        "title": "Договір № 12/2026",
+        "type": "framework",
         "updatedAt": "<ts>"
       },
       {
-        "_id": "<id:15>",
+        "_id": "<id:10>",
         "client": {
-          "_id": "<id:7>",
-          "id": "<id:7>",
-          "name": "alpha systems"
+          "_id": "<id:9>",
+          "id": "<id:9>",
+          "name": "Zeta Labs"
         },
         "createdAt": "<ts>",
         "documents": [
           "<id:16>"
         ],
-        "id": "<id:15>",
+        "id": "<id:10>",
+        "status": "active",
+        "title": "Zeta Labs — Договір",
+        "type": "framework",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:11>",
+        "client": {
+          "_id": "<id:8>",
+          "id": "<id:8>",
+          "name": "alpha systems"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:17>"
+        ],
+        "id": "<id:11>",
         "status": "active",
         "title": "alpha systems — Договір",
+        "type": "framework",
         "updatedAt": "<ts>"
       }
     ]
@@ -4585,35 +5225,50 @@
     "status": 200,
     "body": [
       {
-        "_id": "<id:21>",
-        "client": "<id:7>",
+        "_id": "<id:26>",
+        "client": "<id:8>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "alpha-spec.pdf",
         "size": 23,
+        "type": "other",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:16>",
-        "client": "<id:7>",
+        "_id": "<id:17>",
+        "client": "<id:8>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-alpha.pdf",
         "size": 27,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       },
       {
-        "_id": "<id:14>",
-        "client": "<id:8>",
+        "_id": "<id:16>",
+        "client": "<id:9>",
         "createdAt": "<ts>",
         "filename": "<file.pdf>",
         "mimeType": "application/pdf",
         "originalName": "contract-zeta.pdf",
         "size": 26,
+        "type": "framework_contract",
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:21>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "framework-omega-signed.pdf",
+        "size": 35,
+        "type": "framework_contract",
         "updatedAt": "<ts>",
         "uploadedBy": "<id:1>"
       }
@@ -4677,10 +5332,10 @@
     "step": "write without origin header",
     "status": 200,
     "body": {
-      "_id": "<id:7>",
+      "_id": "<id:8>",
       "code": "ALP-02",
       "createdAt": "<ts>",
-      "id": "<id:7>",
+      "id": "<id:8>",
       "name": "alpha systems",
       "notes": "from a script",
       "status": "active",

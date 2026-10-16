@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Client, CLIENT_STATUSES, clientJson, createClient, deleteClient, findClientById, listClients, saveClient } from '../models/client.model';
-import { contractJson, createContract, deleteClientContracts, deleteContract, listContracts, Contract } from '../models/contract.model';
+import { Client, CLIENT_DETAIL_FIELDS, CLIENT_STATUSES, clientJson, createClient, deleteClient, findClientById, listClients, NewClient, saveClient } from '../models/client.model';
+import { contractJson, createContract, deleteClientContracts, deleteContract, listContracts, Contract, paperStatus } from '../models/contract.model';
 import { createDocument, deleteClientDocuments, Doc, documentJson, findDocumentsByIds, listDocuments, resolveDocs } from '../models/document.model';
 import { deleteClientOrders } from '../models/order.model';
 import { deleteClientProducts } from '../models/product.model';
@@ -11,9 +11,16 @@ import { deleteFromStorage } from '../config/storage';
 
 type MulterFields = { contract?: Express.Multer.File[]; documents?: Express.Multer.File[] };
 
+// The optional card and requisites fields present in a request body.
+function detailFields(body: Record<string, unknown>): Partial<NewClient> {
+  const fields: Partial<NewClient> = {};
+  for (const key of CLIENT_DETAIL_FIELDS) if (body[key] !== undefined) fields[key] = body[key] as string;
+  return fields;
+}
+
 export async function list(req: Request, res: Response): Promise<void> {
-  const clients = await listClients();
-  res.json(clients.map(clientJson));
+  const [clients, contracts] = await Promise.all([listClients(), listContracts()]);
+  res.json(clients.map((c) => ({ ...clientJson(c), papers: paperStatus(contracts.filter((k) => k.clientId === c.id)) })));
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
@@ -26,6 +33,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
   res.json({
     ...clientJson(client),
+    papers: paperStatus(contracts),
     contracts: contracts.map((c) =>
       contractJson(c, { documents: resolveDocs(c.documents, contractDocs).map((d) => documentJson(d, { withId: true })) })
     ),
@@ -33,34 +41,28 @@ export async function getById(req: Request, res: Response): Promise<void> {
   });
 }
 
+// A client usually starts with only an NDA; the framework contract comes later (POST /contracts).
+// A framework contract PDF can still be attached right away as `contract`.
 export async function create(req: Request, res: Response): Promise<void> {
-  const { name, code, contactName, email, phone, address, notes, contractTitle } = req.body as {
-    name?: string;
-    code?: string;
-    contactName?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    notes?: string;
-    contractTitle?: string;
-  };
+  const { name, code, contractTitle } = req.body as { name?: string; code?: string; contractTitle?: string };
 
   const files = req.files as MulterFields | undefined;
   const contractFile = files?.contract?.[0];
   const supportingFiles = files?.documents ?? [];
 
   if (!name || !code) throw new HttpError(400, 'name and code are required');
-  if (!contractFile) throw new HttpError(400, 'contract PDF file is required');
-  if (contractFile.mimetype !== 'application/pdf') throw new HttpError(400, 'contract must be a PDF file');
+  if (contractFile && contractFile.mimetype !== 'application/pdf') throw new HttpError(400, 'contract must be a PDF file');
 
   let client: Client | undefined;
   let contract: Contract | undefined;
   const uploadedDocs: Doc[] = [];
   try {
-    client = await createClient({ name, code, contactName, email, phone, address, notes });
+    client = await createClient({ name, code, ...detailFields(req.body) });
 
-    const contractDoc = await createDocument(await documentFromFile(contractFile, client.id, req.user!.id));
-    uploadedDocs.push(contractDoc);
+    const contractDoc = contractFile
+      ? await createDocument(await documentFromFile(contractFile, client.id, req.user!.id, 'framework_contract'))
+      : undefined;
+    if (contractDoc) uploadedDocs.push(contractDoc);
     const supportingDocs: Doc[] = [];
     for (const file of supportingFiles) {
       const doc = await createDocument(await documentFromFile(file, client.id, req.user!.id));
@@ -68,12 +70,15 @@ export async function create(req: Request, res: Response): Promise<void> {
       supportingDocs.push(doc);
     }
 
-    contract = await createContract({
-      title: contractTitle || `${name} — Договір`,
-      clientId: client.id,
-      status: 'active',
-      documents: [contractDoc.id, ...supportingDocs.map((d) => d.id)],
-    });
+    if (contractDoc) {
+      contract = await createContract({
+        title: contractTitle || `${name} — Договір`,
+        clientId: client.id,
+        type: 'framework',
+        status: 'active',
+        documents: [contractDoc.id, ...supportingDocs.map((d) => d.id)],
+      });
+    }
   } catch (err) {
     uploadedDocs.forEach((doc) => deleteFromStorage(doc.filename).catch(() => {}));
     if (client) await deleteClientDocuments(client.id);
@@ -89,13 +94,9 @@ export async function update(req: Request, res: Response): Promise<void> {
   const client = await findClientById(req.params.id);
   if (!client) throw new HttpError(404, 'Client not found');
 
-  const { name, contactName, email, phone, address, notes, status } = req.body;
+  const { name, status } = req.body;
   if (name !== undefined) client.name = name;
-  if (contactName !== undefined) client.contactName = contactName;
-  if (email !== undefined) client.email = email;
-  if (phone !== undefined) client.phone = phone;
-  if (address !== undefined) client.address = address;
-  if (notes !== undefined) client.notes = notes;
+  Object.assign(client, detailFields(req.body));
   if (status !== undefined) {
     if (!CLIENT_STATUSES.includes(status)) throw new HttpError(400, 'Invalid status');
     client.status = status;

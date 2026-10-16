@@ -15,6 +15,13 @@
       "when": 1792190847629,
       "tag": "0001_drop_manager_role",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1792190993075,
+      "tag": "0002_papers_and_requisites",
+      "breakpoints": true
     }
   ]
 }
