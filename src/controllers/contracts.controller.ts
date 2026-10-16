@@ -1,21 +1,23 @@
 import { Request, Response } from 'express';
-import Contract from '../models/contract.model';
-import Client from '../models/client.model';
+import { Contract, contractJson, CONTRACT_STATUSES, createContract, deleteContract, findContractById, listContracts, saveContract } from '../models/contract.model';
+import { clientExists, clientRefJson, findClientsByIds } from '../models/client.model';
 import { HttpError } from '../utils/HttpError';
-import { CONTRACT_STATUSES } from '../models/contract.model';
+import { byId, castId } from '../utils/validate';
+
+async function withClients(contracts: Contract[]) {
+  const clients = byId(await findClientsByIds([...new Set(contracts.map((c) => c.clientId))]));
+  return contracts.map((c) => contractJson(c, { client: clientRefJson(clients.get(c.clientId)) }));
+}
 
 export async function list(req: Request, res: Response): Promise<void> {
-  const filter: Record<string, unknown> = {};
-  if (req.query.client) filter.client = req.query.client;
-
-  const contracts = await Contract.find(filter).populate('client', 'name').sort({ createdAt: -1 });
-  res.json(contracts);
+  const contracts = await listContracts({ clientId: req.query.client || undefined });
+  res.json(await withClients(contracts));
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
-  const contract = await Contract.findById(req.params.id).populate('client', 'name');
+  const contract = await findContractById(req.params.id);
   if (!contract) throw new HttpError(404, 'Contract not found');
-  res.json(contract);
+  res.json((await withClients([contract]))[0]);
 }
 
 export async function create(req: Request, res: Response): Promise<void> {
@@ -23,25 +25,23 @@ export async function create(req: Request, res: Response): Promise<void> {
   if (!title) throw new HttpError(400, 'title is required');
   if (!client) throw new HttpError(400, 'client is required');
 
-  const clientExists = await Client.exists({ _id: client });
-  if (!clientExists) throw new HttpError(400, 'client does not exist');
+  if (!(await clientExists(client))) throw new HttpError(400, 'client does not exist');
 
   if (status && !CONTRACT_STATUSES.includes(status)) throw new HttpError(400, 'Invalid status');
 
-  const contract = await Contract.create({ title, client, startDate, endDate, status, notes });
-  res.status(201).json(contract);
+  const contract = await createContract({ title, clientId: castId(client), startDate, endDate, status, notes });
+  res.status(201).json(contractJson(contract));
 }
 
 export async function update(req: Request, res: Response): Promise<void> {
-  const contract = await Contract.findById(req.params.id);
+  const contract = await findContractById(req.params.id);
   if (!contract) throw new HttpError(404, 'Contract not found');
 
   const { title, client, startDate, endDate, status, notes } = req.body;
 
   if (client !== undefined) {
-    const clientExists = await Client.exists({ _id: client });
-    if (!clientExists) throw new HttpError(400, 'client does not exist');
-    contract.client = client;
+    if (!(await clientExists(client))) throw new HttpError(400, 'client does not exist');
+    contract.clientId = castId(client);
   }
   if (title !== undefined) contract.title = title;
   if (startDate !== undefined) contract.startDate = startDate;
@@ -52,14 +52,14 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
   if (notes !== undefined) contract.notes = notes;
 
-  await contract.save();
-  res.json(contract);
+  await saveContract(contract);
+  res.json(contractJson(contract));
 }
 
 export async function remove(req: Request, res: Response): Promise<void> {
-  const contract = await Contract.findById(req.params.id);
+  const contract = await findContractById(req.params.id);
   if (!contract) throw new HttpError(404, 'Contract not found');
 
-  await contract.deleteOne();
+  await deleteContract(contract.id);
   res.status(204).send();
 }

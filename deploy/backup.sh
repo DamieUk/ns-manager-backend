@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Backs up the MongoDB database and all uploaded files into $BACKUP_DIR/<timestamp>/,
+# Backs up the MySQL database and all uploaded files into $BACKUP_DIR/<timestamp>/,
 # keeping the last $KEEP_DAYS days. Run nightly from cron on the server, e.g.:
 #   15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 set -euo pipefail
@@ -11,9 +11,9 @@ KEEP_DAYS="${KEEP_DAYS:-14}"
 DEST="$BACKUP_DIR/$(date +%F_%H%M)"
 mkdir -p "$DEST"
 
-docker compose exec -T mongo sh -c \
-  'mongodump -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --db numenor --archive --gzip' \
-  > "$DEST/mongo.archive.gz"
+docker compose exec -T db sh -c \
+  'exec mysqldump --single-transaction --no-tablespaces -uroot -p"$MYSQL_ROOT_PASSWORD" numenor' \
+  | gzip > "$DEST/db.sql.gz"
 
 docker compose exec -T api tar -C /app/uploads -czf - . > "$DEST/uploads.tar.gz"
 

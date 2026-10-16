@@ -1,6 +1,5 @@
 import { Request, Response, CookieOptions } from 'express';
-import { Types } from 'mongoose';
-import Session from '../models/session.model';
+import { createSession, deleteSession, deleteUserSessions } from '../models/session.model';
 import { generateToken, hashToken, tokenExpiryDate } from './authTokens';
 
 export const SESSION_COOKIE = 'numenor_session';
@@ -21,19 +20,19 @@ export function readSessionToken(req: Request): string | undefined {
   return typeof value === 'string' && value ? value : undefined;
 }
 
-export async function startSession(res: Response, userId: Types.ObjectId): Promise<void> {
+export async function startSession(res: Response, userId: string): Promise<void> {
   const { raw, hash } = generateToken();
-  await Session.create({ tokenHash: hash, user: userId, expiresAt: tokenExpiryDate(SESSION_TTL_MS) });
+  await createSession({ tokenHash: hash, userId, expiresAt: tokenExpiryDate(SESSION_TTL_MS) });
   res.cookie(SESSION_COOKIE, raw, { ...cookieOptions, maxAge: SESSION_TTL_MS });
 }
 
 export async function endSession(req: Request, res: Response): Promise<void> {
   const token = readSessionToken(req);
-  if (token) await Session.deleteOne({ tokenHash: hashToken(token) });
+  if (token) await deleteSession(hashToken(token));
   res.clearCookie(SESSION_COOKIE, cookieOptions);
 }
 
 // Signs the user out everywhere — after a password change, deactivation or deletion.
-export async function revokeUserSessions(userId: Types.ObjectId): Promise<void> {
-  await Session.deleteMany({ user: userId });
+export async function revokeUserSessions(userId: string): Promise<void> {
+  await deleteUserSessions(userId);
 }

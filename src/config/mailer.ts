@@ -10,7 +10,11 @@ const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER || 'no-reply@numenorsystems
 let transporter: Transporter | null = null;
 
 if (!SMTP_HOST || !SMTP_USER || !SMTP_PASSWORD) {
-  console.warn('[mailer] SMTP env vars are not fully set — invite/reset emails will fail until they are set.');
+  console.warn(
+    process.env.NODE_ENV === 'production'
+      ? '[mailer] SMTP env vars are not fully set — invite/reset emails will fail until they are set.'
+      : '[mailer] SMTP is not configured — invite/reset emails are logged here instead of sent.'
+  );
 } else {
   transporter = nodemailer.createTransport({
     host: SMTP_HOST,
@@ -49,8 +53,14 @@ function wrapEmailHtml(heading: string, body: string, buttonLabel: string, butto
 </table>`;
 }
 
-async function send(to: string, subject: string, html: string): Promise<void> {
-  if (!transporter) throw new Error('SMTP transporter is not configured');
+// `link` is the action URL inside the email. Without SMTP outside production the email is not
+// sent but logged with that link, so invites and password resets still work in local development.
+async function send(to: string, subject: string, html: string, link: string): Promise<void> {
+  if (!transporter) {
+    if (process.env.NODE_ENV === 'production') throw new Error('SMTP transporter is not configured');
+    console.log(`[mailer] SMTP not configured — email to ${to} not sent ("${subject}"). Link: ${link}`);
+    return;
+  }
   await transporter.sendMail({ from: SMTP_FROM, to, subject, html });
 }
 
@@ -62,7 +72,7 @@ export async function sendInviteEmail(to: string, name: string, activationUrl: s
     activationUrl,
     'Посилання дійсне протягом 24 годин. Якщо ви не очікували цього листа, просто проігноруйте його.'
   );
-  await send(to, 'Запрошення до Numenor Systems', html);
+  await send(to, 'Запрошення до Numenor Systems', html, activationUrl);
 }
 
 export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string): Promise<void> {
@@ -73,5 +83,5 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
     resetUrl,
     'Посилання дійсне протягом 1 години. Якщо ви не надсилали цей запит, просто проігноруйте цей лист — ваш пароль залишиться без змін.'
   );
-  await send(to, 'Відновлення пароля Numenor Systems', html);
+  await send(to, 'Відновлення пароля Numenor Systems', html, resetUrl);
 }

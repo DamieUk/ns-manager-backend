@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import User, { UserDocument } from '../models/user.model';
+import { findUserByEmail, findUserByPasswordToken, saveUser, User } from '../models/user.model';
 import { HttpError } from '../utils/HttpError';
 import {
   generateToken,
@@ -21,9 +21,9 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 // whether a given email exists at all.
 const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing-normalization', 10);
 
-function toAuthUser(user: UserDocument) {
+function toAuthUser(user: User) {
   return {
-    id: user._id.toString(),
+    id: user.id,
     name: `${user.firstName} ${user.lastName}`,
     email: user.email,
     role: user.role,
@@ -41,7 +41,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const { email, password } = req.body as { email?: string; password?: string };
   if (!email || !password) throw new HttpError(400, 'email and password are required');
 
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+  const user = await findUserByEmail(email);
 
   if (!user || !user.isActive || !user.passwordHash) {
     await bcrypt.compare(password, DUMMY_HASH);
@@ -51,7 +51,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new HttpError(401, 'Невірний email або пароль');
 
-  await startSession(res, user._id);
+  await startSession(res, user.id);
   res.json(toAuthUser(user));
 }
 
@@ -66,17 +66,15 @@ async function applyPasswordFromToken(rawToken: string, newPassword: string): Pr
   }
 
   const hash = hashToken(rawToken);
-  const user = await User.findOne({ passwordTokenHash: hash, passwordTokenExpires: { $gt: new Date() } }).select(
-    '+passwordTokenHash'
-  );
+  const user = await findUserByPasswordToken(hash);
   if (!user) return false;
 
   user.passwordHash = await bcrypt.hash(newPassword, 10);
   user.emailVerified = true;
   user.passwordTokenHash = undefined;
   user.passwordTokenExpires = undefined;
-  await user.save();
-  await revokeUserSessions(user._id);
+  await saveUser(user);
+  await revokeUserSessions(user.id);
   return true;
 }
 
@@ -110,14 +108,14 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
   }
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase(), isActive: true }).select('+passwordHash');
+    const user = await findUserByEmail(email, { activeOnly: true });
     if (user) {
       const { raw, hash } = generateToken();
       const isFirstActivation = !user.passwordHash;
 
       user.passwordTokenHash = hash;
       user.passwordTokenExpires = tokenExpiryDate(isFirstActivation ? ACTIVATION_TOKEN_TTL_MS : RESET_TOKEN_TTL_MS);
-      await user.save();
+      await saveUser(user);
 
       const fullName = `${user.firstName} ${user.lastName}`;
       if (isFirstActivation) {

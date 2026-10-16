@@ -1,26 +1,34 @@
-import { Schema, model, HydratedDocument, Types } from 'mongoose';
+import { and, eq, gt, lte } from 'drizzle-orm';
+import { db } from '../db';
+import { sessions } from '../db/schema';
 
 // A login session. The browser holds the raw token in an httpOnly cookie; only its SHA-256
 // hash is stored, so a database leak does not hand out usable sessions.
-export interface ISession {
+export interface Session {
   tokenHash: string;
-  user: Types.ObjectId;
+  userId: string;
   expiresAt: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
-export type SessionDocument = HydratedDocument<ISession>;
+export async function createSession(session: Session): Promise<void> {
+  const now = new Date();
+  // Expired sessions are swept on each login; requireAuth ignores them in the meantime.
+  await db().delete(sessions).where(lte(sessions.expiresAt, now));
+  await db().insert(sessions).values({ ...session, createdAt: now, updatedAt: now });
+}
 
-const sessionSchema = new Schema<ISession>(
-  {
-    tokenHash: { type: String, required: true, unique: true },
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    // MongoDB's TTL monitor removes expired sessions (it runs about once a minute, so
-    // requireAuth also checks expiresAt itself).
-    expiresAt: { type: Date, required: true, index: { expires: 0 } },
-  },
-  { timestamps: true }
-);
+export async function findValidSession(tokenHash: string): Promise<Session | null> {
+  const [row] = await db()
+    .select({ tokenHash: sessions.tokenHash, userId: sessions.userId, expiresAt: sessions.expiresAt })
+    .from(sessions)
+    .where(and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, new Date())));
+  return row ?? null;
+}
 
-export default model<ISession>('Session', sessionSchema);
+export async function deleteSession(tokenHash: string): Promise<void> {
+  await db().delete(sessions).where(eq(sessions.tokenHash, tokenHash));
+}
+
+export async function deleteUserSessions(userId: string): Promise<void> {
+  await db().delete(sessions).where(eq(sessions.userId, userId));
+}

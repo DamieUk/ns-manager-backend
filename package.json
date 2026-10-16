@@ -1,15 +1,16 @@
 {
   "name": "numenor-backend",
   "version": "1.0.0",
-  "description": "Numenor backend API (Node.js, Express, MongoDB)",
+  "description": "Numenor backend API (Node.js, Express, MySQL)",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
     "start": "node --enable-source-maps dist/server.js",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "seed:executive": "tsx src/scripts/seedExecutive.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsx --test test/api.test.ts",
+    "db:generate": "drizzle-kit generate"
   },
   "keywords": [],
   "author": "",
@@ -23,13 +24,13 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.3",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
-    "mongodb": "~7.5.0",
-    "mongoose": "^9.9.4",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
+    "mysql2": "^3.24.5",
     "nodemailer": "^9.0.5"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^20.19.43",
     "@types/nodemailer": "^8.0.1",
+    "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.12",
     "typescript": "^5.9.3"
   }

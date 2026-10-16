@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
-import User from '../models/user.model';
+import { connectDB, disconnectDB, DEFAULT_DATABASE_URL } from '../db';
+import { createUser, findUserByEmail } from '../models/user.model';
 import { ROLE_DEFAULT_PERMISSIONS } from '../constants/permissions';
 
 async function main(): Promise<void> {
@@ -14,13 +14,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/numenor';
-  await mongoose.connect(uri);
+  await connectDB(process.env.DATABASE_URL || DEFAULT_DATABASE_URL);
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const existing = await findUserByEmail(email);
   if (existing) {
     console.log(`User already exists: ${existing.email} (role: ${existing.role}). No changes made.`);
-    await mongoose.disconnect();
+    await disconnectDB();
     return;
   }
 
@@ -28,7 +27,7 @@ async function main(): Promise<void> {
   const lastName = rest.join(' ') || firstName;
   const password = crypto.randomBytes(12).toString('base64url');
 
-  const user = await User.create({
+  const user = await createUser({
     firstName,
     lastName,
     jobTitle: 'Executive',
@@ -41,10 +40,10 @@ async function main(): Promise<void> {
     emailVerified: true,
   });
 
-  console.log(`Created executive user ${user.email} (id: ${user._id.toString()}).`);
+  console.log(`Created executive user ${user.email} (id: ${user.id}).`);
   console.log(`Password: ${password}`);
   console.log('Save it now — it is not stored anywhere in plain text. It can be changed later on the Users page.');
-  await mongoose.disconnect();
+  await disconnectDB();
 }
 
 main().catch((err) => {

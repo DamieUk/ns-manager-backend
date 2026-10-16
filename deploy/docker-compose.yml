@@ -6,19 +6,21 @@
 name: numenor
 
 services:
-  mongo:
-    image: mongo:8.0
+  db:
+    image: mysql:8.4
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?set MONGO_ROOT_USER in deploy/.env}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in deploy/.env}
+      MYSQL_DATABASE: numenor
+      MYSQL_USER: numenor
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in deploy/.env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in deploy/.env}
     volumes:
-      - mongo-data:/data/db
+      - db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 12
 
   api:
     build: ..
@@ -27,13 +29,13 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5001
-      MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/numenor?authSource=admin
+      DATABASE_URL: mysql://numenor:${DB_PASSWORD}@db:3306/numenor
       UPLOAD_DIR: /app/uploads
       CLIENT_ORIGIN: https://${DOMAIN}
     volumes:
       - uploads:/app/uploads
     depends_on:
-      mongo:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:5001/api/health"]
@@ -63,7 +65,7 @@ services:
       - web
 
 volumes:
-  mongo-data:
+  db-data:
   uploads:
   caddy-data:
   caddy-config:

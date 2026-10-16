@@ -1,14 +1,14 @@
 import 'dotenv/config';
 
 import app from './app';
-import connectDB from './config/db';
+import { connectDB, DEFAULT_DATABASE_URL } from './db';
 
 const PORT = process.env.PORT || 5001;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/numenor';
+const DATABASE_URL = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
 
 async function start(): Promise<void> {
   try {
-    await connectDB(MONGODB_URI);
+    await connectDB(DATABASE_URL);
     app.listen(PORT, () => {
       console.log(`[server] listening on http://localhost:${PORT}`);
     });

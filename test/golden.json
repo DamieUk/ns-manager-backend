@@ -1,0 +1,4648 @@
+[
+  {
+    "step": "health",
+    "status": 200,
+    "body": {
+      "status": "ok"
+    }
+  },
+  {
+    "step": "me without session",
+    "status": 401,
+    "body": {
+      "message": "Not signed in"
+    }
+  },
+  {
+    "step": "login missing password",
+    "status": 400,
+    "body": {
+      "message": "email and password are required"
+    }
+  },
+  {
+    "step": "login wrong password",
+    "status": 401,
+    "body": {
+      "message": "Невірний email або пароль"
+    }
+  },
+  {
+    "step": "login exec (email case-insensitive)",
+    "status": 200,
+    "body": {
+      "body": {
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "exec@test.local",
+        "id": "<id:1>",
+        "name": "Ivan Executive",
+        "permissions": [
+          {
+            "action": "modify",
+            "key": "ORDERS"
+          },
+          {
+            "action": "modify",
+            "key": "USERS"
+          },
+          {
+            "action": "modify",
+            "key": "PRODUCTS"
+          }
+        ],
+        "role": "executive"
+      },
+      "cookie": [
+        "numenor_session=<token>; Max-Age=43200; Path=/api; Expires=<date>; HttpOnly; SameSite=Strict"
+      ]
+    }
+  },
+  {
+    "step": "me exec",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "exec@test.local",
+      "id": "<id:1>",
+      "name": "Ivan Executive",
+      "permissions": [
+        {
+          "action": "modify",
+          "key": "ORDERS"
+        },
+        {
+          "action": "modify",
+          "key": "USERS"
+        },
+        {
+          "action": "modify",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "executive"
+    }
+  },
+  {
+    "step": "bearer header is not accepted",
+    "status": 401,
+    "body": {
+      "message": "Not signed in"
+    }
+  },
+  {
+    "step": "create user missing name",
+    "status": 400,
+    "body": {
+      "message": "firstName and lastName are required"
+    }
+  },
+  {
+    "step": "create user invalid role",
+    "status": 400,
+    "body": {
+      "message": "Invalid role"
+    }
+  },
+  {
+    "step": "create manager",
+    "status": 201,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "manager@test.local",
+      "firstName": "Maria",
+      "id": "<id:2>",
+      "isActive": true,
+      "jobTitle": "Production manager",
+      "lastName": "Manager",
+      "permissions": [
+        {
+          "action": "modify",
+          "key": "USERS"
+        },
+        {
+          "action": "modify",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "manager",
+      "status": "working"
+    }
+  },
+  {
+    "step": "accept invite short password",
+    "status": 400,
+    "body": {
+      "message": "Пароль має містити щонайменше 8 символів"
+    }
+  },
+  {
+    "step": "accept invite",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "accept invite token reused",
+    "status": 400,
+    "body": {
+      "message": "Посилання недійсне або застаріло"
+    }
+  },
+  {
+    "step": "accept invite missing token",
+    "status": 400,
+    "body": {
+      "message": "token and password are required"
+    }
+  },
+  {
+    "step": "create employee olena",
+    "status": 201,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "firstName": "Олена",
+      "id": "<id:3>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "create employee petro",
+    "status": 201,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "petro@test.local",
+      "firstName": "Petro",
+      "id": "<id:4>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Koval",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "create user duplicate email",
+    "status": 409,
+    "body": {
+      "message": "A user with this email already exists"
+    }
+  },
+  {
+    "step": "set password too short",
+    "status": 400,
+    "body": {
+      "message": "Пароль має містити щонайменше 8 символів"
+    }
+  },
+  {
+    "step": "set password olena",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "set password petro",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "login manager",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "manager@test.local",
+      "id": "<id:2>",
+      "name": "Maria Manager",
+      "permissions": [
+        {
+          "action": "modify",
+          "key": "USERS"
+        },
+        {
+          "action": "modify",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "manager"
+    }
+  },
+  {
+    "step": "login olena",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "id": "<id:3>",
+      "name": "Олена Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "login petro",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "petro@test.local",
+      "id": "<id:4>",
+      "name": "Petro Koval",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "admin changes olena password",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "olena session after password change",
+    "status": 401,
+    "body": {
+      "message": "Session expired"
+    }
+  },
+  {
+    "step": "login olena new password",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "id": "<id:3>",
+      "name": "Олена Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "manager creates executive",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role to create this account"
+    }
+  },
+  {
+    "step": "manager creates employee with custom permissions",
+    "status": 201,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "none",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "manager edits executive",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role to edit this account"
+    }
+  },
+  {
+    "step": "manager sets executive password",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role to reset this account"
+    }
+  },
+  {
+    "step": "list users",
+    "status": 200,
+    "body": [
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "ivan@test.local",
+        "firstName": "Ivan",
+        "id": "<id:5>",
+        "isActive": true,
+        "jobTitle": "Assembler",
+        "lastName": "Tkach",
+        "permissions": [
+          {
+            "action": "none",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "petro@test.local",
+        "firstName": "Petro",
+        "id": "<id:4>",
+        "isActive": true,
+        "jobTitle": "Assembler",
+        "lastName": "Koval",
+        "permissions": [
+          {
+            "action": "view",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "olena@test.local",
+        "firstName": "Олена",
+        "id": "<id:3>",
+        "isActive": true,
+        "jobTitle": "Assembler",
+        "lastName": "Шевченко",
+        "permissions": [
+          {
+            "action": "view",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "manager@test.local",
+        "firstName": "Maria",
+        "id": "<id:2>",
+        "isActive": true,
+        "jobTitle": "Production manager",
+        "lastName": "Manager",
+        "permissions": [
+          {
+            "action": "modify",
+            "key": "USERS"
+          },
+          {
+            "action": "modify",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "manager",
+        "status": "working"
+      },
+      {
+        "address": "—",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "exec@test.local",
+        "firstName": "Ivan",
+        "id": "<id:1>",
+        "isActive": true,
+        "jobTitle": "Executive",
+        "lastName": "Executive",
+        "permissions": [
+          {
+            "action": "modify",
+            "key": "ORDERS"
+          },
+          {
+            "action": "modify",
+            "key": "USERS"
+          },
+          {
+            "action": "modify",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "—",
+        "role": "executive",
+        "status": "working"
+      }
+    ]
+  },
+  {
+    "step": "get user",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "firstName": "Олена",
+      "id": "<id:3>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "get user malformed id",
+    "status": 400,
+    "body": {
+      "message": "Invalid _id: not-an-id"
+    }
+  },
+  {
+    "step": "get user unknown id",
+    "status": 404,
+    "body": {
+      "message": "User not found"
+    }
+  },
+  {
+    "step": "update user",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "firstName": "Олена",
+      "id": "<id:3>",
+      "isActive": true,
+      "jobTitle": "Senior assembler",
+      "lastName": "Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 67 111 11 11",
+      "role": "employee",
+      "status": "vacation"
+    }
+  },
+  {
+    "step": "update user invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "update user empty first name",
+    "status": 400,
+    "body": {
+      "message": "Path `firstName` is required."
+    }
+  },
+  {
+    "step": "update user back to working",
+    "status": 200,
+    "body": {
+      "address": "Lviv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "olena@test.local",
+      "firstName": "Олена",
+      "id": "<id:3>",
+      "isActive": true,
+      "jobTitle": "Senior assembler",
+      "lastName": "Шевченко",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 67 111 11 11",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "manager lists users",
+    "status": 200,
+    "body": [
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "ivan@test.local",
+        "firstName": "Ivan",
+        "id": "<id:5>",
+        "isActive": true,
+        "jobTitle": "Assembler",
+        "lastName": "Tkach",
+        "permissions": [
+          {
+            "action": "none",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "petro@test.local",
+        "firstName": "Petro",
+        "id": "<id:4>",
+        "isActive": true,
+        "jobTitle": "Assembler",
+        "lastName": "Koval",
+        "permissions": [
+          {
+            "action": "view",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Lviv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "olena@test.local",
+        "firstName": "Олена",
+        "id": "<id:3>",
+        "isActive": true,
+        "jobTitle": "Senior assembler",
+        "lastName": "Шевченко",
+        "permissions": [
+          {
+            "action": "view",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 67 111 11 11",
+        "role": "employee",
+        "status": "working"
+      },
+      {
+        "address": "Kyiv",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "manager@test.local",
+        "firstName": "Maria",
+        "id": "<id:2>",
+        "isActive": true,
+        "jobTitle": "Production manager",
+        "lastName": "Manager",
+        "permissions": [
+          {
+            "action": "modify",
+            "key": "USERS"
+          },
+          {
+            "action": "modify",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "+380 44 000 00 00",
+        "role": "manager",
+        "status": "working"
+      },
+      {
+        "address": "—",
+        "avatarUrl": null,
+        "createdAt": "<ts>",
+        "email": "exec@test.local",
+        "firstName": "Ivan",
+        "id": "<id:1>",
+        "isActive": true,
+        "jobTitle": "Executive",
+        "lastName": "Executive",
+        "permissions": [
+          {
+            "action": "modify",
+            "key": "ORDERS"
+          },
+          {
+            "action": "modify",
+            "key": "USERS"
+          },
+          {
+            "action": "modify",
+            "key": "PRODUCTS"
+          }
+        ],
+        "phone": "—",
+        "role": "executive",
+        "status": "working"
+      }
+    ]
+  },
+  {
+    "step": "employee lists users",
+    "status": 403,
+    "body": {
+      "message": "Requires USERS:view permission"
+    }
+  },
+  {
+    "step": "forgot password unknown email",
+    "status": 200,
+    "body": {
+      "message": "Якщо такий email існує, на нього надіслано лист"
+    }
+  },
+  {
+    "step": "forgot password petro",
+    "status": 200,
+    "body": {
+      "message": "Якщо такий email існує, на нього надіслано лист"
+    }
+  },
+  {
+    "step": "reset password bad token",
+    "status": 400,
+    "body": {
+      "message": "Посилання недійсне або застаріло"
+    }
+  },
+  {
+    "step": "reset password",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "petro session after reset",
+    "status": 401,
+    "body": {
+      "message": "Session expired"
+    }
+  },
+  {
+    "step": "login petro old password",
+    "status": 401,
+    "body": {
+      "message": "Невірний email або пароль"
+    }
+  },
+  {
+    "step": "login petro new password",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "petro@test.local",
+      "id": "<id:4>",
+      "name": "Petro Koval",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "forgot password not activated (sends invite)",
+    "status": 200,
+    "body": {
+      "message": "Якщо такий email існує, на нього надіслано лист"
+    }
+  },
+  {
+    "step": "accept invite ivan",
+    "status": 200,
+    "body": {
+      "message": "ok"
+    }
+  },
+  {
+    "step": "login ivan",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "id": "<id:5>",
+      "name": "Ivan Tkach",
+      "permissions": [
+        {
+          "action": "none",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "create client without contract",
+    "status": 400,
+    "body": {
+      "message": "contract PDF file is required"
+    }
+  },
+  {
+    "step": "create client contract not pdf",
+    "status": 400,
+    "body": {
+      "message": "contract must be a PDF file"
+    }
+  },
+  {
+    "step": "create client missing code",
+    "status": 400,
+    "body": {
+      "message": "name and code are required"
+    }
+  },
+  {
+    "step": "create client borysfen",
+    "status": 201,
+    "body": {
+      "_id": "<id:6>",
+      "address": "Київ",
+      "code": "BOR-01",
+      "contactName": "Андрій",
+      "createdAt": "<ts>",
+      "email": "info@borysfen.ua",
+      "id": "<id:6>",
+      "name": "Борисфен Електронікс",
+      "notes": "VIP клієнт",
+      "phone": "+380 44 222",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create client alpha",
+    "status": 201,
+    "body": {
+      "_id": "<id:7>",
+      "code": "ALP-02",
+      "createdAt": "<ts>",
+      "id": "<id:7>",
+      "name": "alpha systems",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create client zeta",
+    "status": 201,
+    "body": {
+      "_id": "<id:8>",
+      "code": "ZET-03",
+      "createdAt": "<ts>",
+      "email": "hello@zeta.io",
+      "id": "<id:8>",
+      "name": "Zeta Labs",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create client duplicate code",
+    "status": 409,
+    "body": {
+      "message": "Duplicate value for code"
+    }
+  },
+  {
+    "step": "uploads after clients",
+    "status": 0,
+    "body": 5
+  },
+  {
+    "step": "list clients",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:8>",
+        "code": "ZET-03",
+        "createdAt": "<ts>",
+        "email": "hello@zeta.io",
+        "id": "<id:8>",
+        "name": "Zeta Labs",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:7>",
+        "code": "ALP-02",
+        "createdAt": "<ts>",
+        "id": "<id:7>",
+        "name": "alpha systems",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:6>",
+        "address": "Київ",
+        "code": "BOR-01",
+        "contactName": "Андрій",
+        "createdAt": "<ts>",
+        "email": "info@borysfen.ua",
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс",
+        "notes": "VIP клієнт",
+        "phone": "+380 44 222",
+        "status": "active",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "get client",
+    "status": 200,
+    "body": {
+      "_id": "<id:6>",
+      "address": "Київ",
+      "code": "BOR-01",
+      "contactName": "Андрій",
+      "contracts": [
+        {
+          "_id": "<id:9>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "documents": [
+            {
+              "_id": "<id:10>",
+              "client": "<id:6>",
+              "createdAt": "<ts>",
+              "filename": "<file.pdf>",
+              "id": "<id:10>",
+              "mimeType": "application/pdf",
+              "originalName": "contract-borysfen.pdf",
+              "size": 30,
+              "updatedAt": "<ts>",
+              "uploadedBy": "<id:1>"
+            },
+            {
+              "_id": "<id:11>",
+              "client": "<id:6>",
+              "createdAt": "<ts>",
+              "filename": "<file.png>",
+              "id": "<id:11>",
+              "mimeType": "image/png",
+              "originalName": "drawing.png",
+              "size": 7,
+              "updatedAt": "<ts>",
+              "uploadedBy": "<id:1>"
+            },
+            {
+              "_id": "<id:12>",
+              "client": "<id:6>",
+              "createdAt": "<ts>",
+              "filename": "<file.pdf>",
+              "id": "<id:12>",
+              "mimeType": "application/pdf",
+              "originalName": "spec-a.pdf",
+              "size": 19,
+              "updatedAt": "<ts>",
+              "uploadedBy": "<id:1>"
+            }
+          ],
+          "id": "<id:9>",
+          "status": "active",
+          "title": "Рамковий договір",
+          "updatedAt": "<ts>"
+        }
+      ],
+      "createdAt": "<ts>",
+      "documents": [
+        {
+          "_id": "<id:10>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.pdf>",
+          "mimeType": "application/pdf",
+          "originalName": "contract-borysfen.pdf",
+          "size": 30,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        {
+          "_id": "<id:11>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.png>",
+          "mimeType": "image/png",
+          "originalName": "drawing.png",
+          "size": 7,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        {
+          "_id": "<id:12>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.pdf>",
+          "mimeType": "application/pdf",
+          "originalName": "spec-a.pdf",
+          "size": 19,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        }
+      ],
+      "email": "info@borysfen.ua",
+      "id": "<id:6>",
+      "name": "Борисфен Електронікс",
+      "notes": "VIP клієнт",
+      "phone": "+380 44 222",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "get client malformed id",
+    "status": 400,
+    "body": {
+      "message": "Invalid _id: xyz"
+    }
+  },
+  {
+    "step": "get client unknown id",
+    "status": 404,
+    "body": {
+      "message": "Client not found"
+    }
+  },
+  {
+    "step": "update client",
+    "status": 200,
+    "body": {
+      "_id": "<id:8>",
+      "code": "ZET-03",
+      "createdAt": "<ts>",
+      "email": "new@zeta.io",
+      "id": "<id:8>",
+      "name": "Zeta Labs",
+      "notes": "",
+      "phone": "+1 555 0100",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update client invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "update client empty name",
+    "status": 400,
+    "body": {
+      "message": "Path `name` is required."
+    }
+  },
+  {
+    "step": "employee lists clients",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:view permission"
+    }
+  },
+  {
+    "step": "manager lists clients",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:view permission"
+    }
+  },
+  {
+    "step": "list contracts",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:13>",
+        "client": {
+          "_id": "<id:8>",
+          "id": "<id:8>",
+          "name": "Zeta Labs"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:14>"
+        ],
+        "id": "<id:13>",
+        "status": "active",
+        "title": "Zeta Labs — Договір",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:15>",
+        "client": {
+          "_id": "<id:7>",
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:16>"
+        ],
+        "id": "<id:15>",
+        "status": "active",
+        "title": "alpha systems — Договір",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:9>",
+        "client": {
+          "_id": "<id:6>",
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:10>",
+          "<id:12>",
+          "<id:11>"
+        ],
+        "id": "<id:9>",
+        "status": "active",
+        "title": "Рамковий договір",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "list contracts by client",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:9>",
+        "client": {
+          "_id": "<id:6>",
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:10>",
+          "<id:12>",
+          "<id:11>"
+        ],
+        "id": "<id:9>",
+        "status": "active",
+        "title": "Рамковий договір",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "create contract missing title",
+    "status": 400,
+    "body": {
+      "message": "title is required"
+    }
+  },
+  {
+    "step": "create contract unknown client",
+    "status": 400,
+    "body": {
+      "message": "client does not exist"
+    }
+  },
+  {
+    "step": "create contract invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "create contract",
+    "status": 201,
+    "body": {
+      "_id": "<id:17>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "documents": [],
+      "endDate": "<day+300>",
+      "id": "<id:17>",
+      "notes": "Секретно",
+      "startDate": "<day-30>",
+      "status": "draft",
+      "title": "Додаткова угода",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create contract with exact start time",
+    "status": 201,
+    "body": {
+      "_id": "<id:18>",
+      "client": "<id:8>",
+      "createdAt": "<ts>",
+      "documents": [],
+      "id": "<id:18>",
+      "startDate": "<ts>",
+      "status": "draft",
+      "title": "Timed",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "contract start time round-trips",
+    "status": 0,
+    "body": true
+  },
+  {
+    "step": "get contract",
+    "status": 200,
+    "body": {
+      "_id": "<id:17>",
+      "client": {
+        "_id": "<id:7>",
+        "id": "<id:7>",
+        "name": "alpha systems"
+      },
+      "createdAt": "<ts>",
+      "documents": [],
+      "endDate": "<day+300>",
+      "id": "<id:17>",
+      "notes": "Секретно",
+      "startDate": "<day-30>",
+      "status": "draft",
+      "title": "Додаткова угода",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update contract",
+    "status": 200,
+    "body": {
+      "_id": "<id:17>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "documents": [],
+      "endDate": "<day+400>",
+      "id": "<id:17>",
+      "notes": "Оновлено",
+      "startDate": "<day-30>",
+      "status": "active",
+      "title": "Угода №2",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update contract invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "update contract unknown client",
+    "status": 400,
+    "body": {
+      "message": "client does not exist"
+    }
+  },
+  {
+    "step": "update contract empty title",
+    "status": 400,
+    "body": {
+      "message": "Path `title` is required."
+    }
+  },
+  {
+    "step": "delete contract",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "get deleted contract",
+    "status": 404,
+    "body": {
+      "message": "Contract not found"
+    }
+  },
+  {
+    "step": "upload document without file",
+    "status": 400,
+    "body": {
+      "message": "file is required"
+    }
+  },
+  {
+    "step": "upload document without client",
+    "status": 400,
+    "body": {
+      "message": "client is required"
+    }
+  },
+  {
+    "step": "upload document unknown client",
+    "status": 400,
+    "body": {
+      "message": "client does not exist"
+    }
+  },
+  {
+    "step": "upload document unsupported type",
+    "status": 400,
+    "body": {
+      "message": "Unsupported file type"
+    }
+  },
+  {
+    "step": "upload document",
+    "status": 201,
+    "body": {
+      "_id": "<id:19>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "filename": "<file.xlsx>",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "originalName": "bom-rev-a.xlsx",
+      "size": 31,
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "upload document 2",
+    "status": 201,
+    "body": {
+      "_id": "<id:20>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "filename": "<file.jpg>",
+      "mimeType": "image/jpeg",
+      "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+      "size": 4,
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "upload document for other client",
+    "status": 201,
+    "body": {
+      "_id": "<id:21>",
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "filename": "<file.pdf>",
+      "mimeType": "application/pdf",
+      "originalName": "alpha-spec.pdf",
+      "size": 23,
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "list documents",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:21>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "alpha-spec.pdf",
+        "size": 23,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:19>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.xlsx>",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "originalName": "bom-rev-a.xlsx",
+        "size": 31,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:16>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-alpha.pdf",
+        "size": 27,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:10>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-borysfen.pdf",
+        "size": 30,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:14>",
+        "client": "<id:8>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-zeta.pdf",
+        "size": 26,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:11>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.png>",
+        "mimeType": "image/png",
+        "originalName": "drawing.png",
+        "size": 7,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:20>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.jpg>",
+        "mimeType": "image/jpeg",
+        "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+        "size": 4,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:12>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "spec-a.pdf",
+        "size": 19,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      }
+    ]
+  },
+  {
+    "step": "list documents by client",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:19>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.xlsx>",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "originalName": "bom-rev-a.xlsx",
+        "size": 31,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:10>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-borysfen.pdf",
+        "size": 30,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:11>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.png>",
+        "mimeType": "image/png",
+        "originalName": "drawing.png",
+        "size": 7,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:20>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.jpg>",
+        "mimeType": "image/jpeg",
+        "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+        "size": 4,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:12>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "spec-a.pdf",
+        "size": 19,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      }
+    ]
+  },
+  {
+    "step": "get document",
+    "status": 200,
+    "body": {
+      "_id": "<id:19>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "filename": "<file.xlsx>",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "originalName": "bom-rev-a.xlsx",
+      "size": 31,
+      "updatedAt": "<ts>",
+      "uploadedBy": "<id:1>"
+    }
+  },
+  {
+    "step": "download document",
+    "status": 200,
+    "body": {
+      "disposition": "attachment; filename=\"bom-rev-a.xlsx\"",
+      "identical": true,
+      "length": "31",
+      "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+  },
+  {
+    "step": "download document with non-ascii name",
+    "status": 200,
+    "body": {
+      "disposition": "attachment; filename=\"%C3%91%C2%84%C3%90%C2%BE%C3%91%C2%82%C3%90%C2%BE%20%C3%90%C2%BF%C3%90%C2%BB%C3%90%C2%B0%C3%91%C2%82%C3%90%C2%B8.jpg\"",
+      "type": "image/jpeg"
+    }
+  },
+  {
+    "step": "download unknown document",
+    "status": 404,
+    "body": {
+      "message": "Document not found"
+    }
+  },
+  {
+    "step": "employee lists documents",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:view permission"
+    }
+  },
+  {
+    "step": "create product missing fields",
+    "status": 400,
+    "body": {
+      "message": "name, sku, type and client are required"
+    }
+  },
+  {
+    "step": "create product invalid type",
+    "status": 400,
+    "body": {
+      "message": "Invalid type"
+    }
+  },
+  {
+    "step": "create PCB without BOM",
+    "status": 400,
+    "body": {
+      "message": "bomFile is required for PCB products"
+    }
+  },
+  {
+    "step": "create product unknown client",
+    "status": 400,
+    "body": {
+      "message": "client does not exist"
+    }
+  },
+  {
+    "step": "create PCB",
+    "status": 201,
+    "body": {
+      "_id": "<id:22>",
+      "additionalFiles": [
+        "<id:23>",
+        "<id:24>"
+      ],
+      "bomFile": "<id:25>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "4 шари, ENIG",
+      "id": "<id:22>",
+      "name": "Плата керування",
+      "sku": "PCB-100",
+      "type": "PCB",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create component",
+    "status": 201,
+    "body": {
+      "_id": "<id:26>",
+      "additionalFiles": [],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "id": "<id:26>",
+      "name": "Antenna",
+      "sku": "ANT-7",
+      "type": "Component",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create product for alpha",
+    "status": 201,
+    "body": {
+      "_id": "<id:27>",
+      "additionalFiles": [],
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "id": "<id:27>",
+      "name": "Box",
+      "sku": "BOX-1",
+      "type": "Other",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create product duplicate sku",
+    "status": 409,
+    "body": {
+      "message": "Duplicate value for sku"
+    }
+  },
+  {
+    "step": "uploads after products",
+    "status": 0,
+    "body": 11
+  },
+  {
+    "step": "list products without client",
+    "status": 400,
+    "body": {
+      "message": "client is required"
+    }
+  },
+  {
+    "step": "list products",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:26>",
+        "additionalFiles": [],
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "id": "<id:26>",
+        "name": "Antenna",
+        "sku": "ANT-7",
+        "type": "Component",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:22>",
+        "additionalFiles": [
+          {
+            "_id": "<id:24>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.pdf>",
+            "id": "<id:24>",
+            "mimeType": "application/pdf",
+            "originalName": "assembly.pdf",
+            "size": 21,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          },
+          {
+            "_id": "<id:23>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.zip>",
+            "id": "<id:23>",
+            "mimeType": "application/zip",
+            "originalName": "gerber.zip",
+            "size": 2,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          }
+        ],
+        "bomFile": {
+          "_id": "<id:25>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.xlsx>",
+          "id": "<id:25>",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "originalName": "bom-pcb-100.xlsx",
+          "size": 31,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "description": "4 шари, ENIG",
+        "id": "<id:22>",
+        "name": "Плата керування",
+        "sku": "PCB-100",
+        "type": "PCB",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "get product",
+    "status": 200,
+    "body": {
+      "_id": "<id:22>",
+      "additionalFiles": [
+        {
+          "_id": "<id:24>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.pdf>",
+          "id": "<id:24>",
+          "mimeType": "application/pdf",
+          "originalName": "assembly.pdf",
+          "size": 21,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        {
+          "_id": "<id:23>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.zip>",
+          "id": "<id:23>",
+          "mimeType": "application/zip",
+          "originalName": "gerber.zip",
+          "size": 2,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        }
+      ],
+      "bomFile": {
+        "_id": "<id:25>",
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "filename": "<file.xlsx>",
+        "id": "<id:25>",
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "originalName": "bom-pcb-100.xlsx",
+        "size": 31,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "4 шари, ENIG",
+      "id": "<id:22>",
+      "name": "Плата керування",
+      "sku": "PCB-100",
+      "type": "PCB",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update product",
+    "status": 200,
+    "body": {
+      "_id": "<id:26>",
+      "additionalFiles": [
+        "<id:20>",
+        "<id:19>"
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Gain 5 dBi",
+      "id": "<id:26>",
+      "name": "Antenna v2",
+      "sku": "ANT-7",
+      "type": "Component",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update product invalid type",
+    "status": 400,
+    "body": {
+      "message": "Invalid type"
+    }
+  },
+  {
+    "step": "update product clear BOM",
+    "status": 200,
+    "body": {
+      "_id": "<id:22>",
+      "additionalFiles": [
+        "<id:23>",
+        "<id:24>"
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "4 шари, ENIG",
+      "id": "<id:22>",
+      "name": "Плата керування",
+      "sku": "PCB-100",
+      "type": "PCB",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "get product without BOM",
+    "status": 200,
+    "body": {
+      "_id": "<id:22>",
+      "additionalFiles": [
+        {
+          "_id": "<id:24>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.pdf>",
+          "id": "<id:24>",
+          "mimeType": "application/pdf",
+          "originalName": "assembly.pdf",
+          "size": 21,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        {
+          "_id": "<id:23>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.zip>",
+          "id": "<id:23>",
+          "mimeType": "application/zip",
+          "originalName": "gerber.zip",
+          "size": 2,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "4 шари, ENIG",
+      "id": "<id:22>",
+      "name": "Плата керування",
+      "sku": "PCB-100",
+      "type": "PCB",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update product restore BOM",
+    "status": 200,
+    "body": {
+      "_id": "<id:22>",
+      "additionalFiles": [
+        "<id:23>",
+        "<id:24>"
+      ],
+      "bomFile": "<id:25>",
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "4 шари, ENIG",
+      "id": "<id:22>",
+      "name": "Плата керування",
+      "sku": "PCB-100",
+      "type": "PCB",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update product empty sku",
+    "status": 400,
+    "body": {
+      "message": "Path `sku` is required."
+    }
+  },
+  {
+    "step": "employee lists products",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:26>",
+        "additionalFiles": [
+          {
+            "_id": "<id:19>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.xlsx>",
+            "id": "<id:19>",
+            "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "originalName": "bom-rev-a.xlsx",
+            "size": 31,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          },
+          {
+            "_id": "<id:20>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.jpg>",
+            "id": "<id:20>",
+            "mimeType": "image/jpeg",
+            "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+            "size": 4,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          }
+        ],
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "description": "Gain 5 dBi",
+        "id": "<id:26>",
+        "name": "Antenna v2",
+        "sku": "ANT-7",
+        "type": "Component",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:22>",
+        "additionalFiles": [
+          {
+            "_id": "<id:24>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.pdf>",
+            "id": "<id:24>",
+            "mimeType": "application/pdf",
+            "originalName": "assembly.pdf",
+            "size": 21,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          },
+          {
+            "_id": "<id:23>",
+            "client": "<id:6>",
+            "createdAt": "<ts>",
+            "filename": "<file.zip>",
+            "id": "<id:23>",
+            "mimeType": "application/zip",
+            "originalName": "gerber.zip",
+            "size": 2,
+            "updatedAt": "<ts>",
+            "uploadedBy": "<id:1>"
+          }
+        ],
+        "bomFile": {
+          "_id": "<id:25>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.xlsx>",
+          "id": "<id:25>",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "originalName": "bom-pcb-100.xlsx",
+          "size": 31,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        },
+        "client": "<id:6>",
+        "createdAt": "<ts>",
+        "description": "4 шари, ENIG",
+        "id": "<id:22>",
+        "name": "Плата керування",
+        "sku": "PCB-100",
+        "type": "PCB",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "employee creates product",
+    "status": 403,
+    "body": {
+      "message": "Requires PRODUCTS:modify permission"
+    }
+  },
+  {
+    "step": "employee without PRODUCTS lists products",
+    "status": 403,
+    "body": {
+      "message": "Requires PRODUCTS:view permission"
+    }
+  },
+  {
+    "step": "grant PRODUCTS view",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "employee with granted PRODUCTS lists products",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:27>",
+        "additionalFiles": [],
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "id": "<id:27>",
+        "name": "Box",
+        "sku": "BOX-1",
+        "type": "Other",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "promote ivan to manager",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "manager",
+      "status": "working"
+    }
+  },
+  {
+    "step": "manager edits another manager",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role to edit this account"
+    }
+  },
+  {
+    "step": "demote ivan to employee",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "deactivate ivan",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": false,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "ivan session after deactivation",
+    "status": 401,
+    "body": {
+      "message": "Session expired"
+    }
+  },
+  {
+    "step": "reactivate ivan",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "firstName": "Ivan",
+      "id": "<id:5>",
+      "isActive": true,
+      "jobTitle": "Assembler",
+      "lastName": "Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "working"
+    }
+  },
+  {
+    "step": "login ivan again",
+    "status": 200,
+    "body": {
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "ivan@test.local",
+      "id": "<id:5>",
+      "name": "Ivan Tkach",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "role": "employee"
+    }
+  },
+  {
+    "step": "create order missing client",
+    "status": 400,
+    "body": {
+      "message": "client is required"
+    }
+  },
+  {
+    "step": "create order missing product",
+    "status": 400,
+    "body": {
+      "message": "product is required"
+    }
+  },
+  {
+    "step": "create order zero quantity",
+    "status": 400,
+    "body": {
+      "message": "quantity must be a positive number"
+    }
+  },
+  {
+    "step": "create order blank description",
+    "status": 400,
+    "body": {
+      "message": "description is required"
+    }
+  },
+  {
+    "step": "create order unknown product",
+    "status": 400,
+    "body": {
+      "message": "product does not exist"
+    }
+  },
+  {
+    "step": "create order invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "create order manager is employee",
+    "status": 400,
+    "body": {
+      "message": "manager must be a manager or executive"
+    }
+  },
+  {
+    "step": "create order unknown manager",
+    "status": 400,
+    "body": {
+      "message": "manager must be a manager or executive"
+    }
+  },
+  {
+    "step": "create order invalid employees",
+    "status": 400,
+    "body": {
+      "message": "One or more assignedEmployees are invalid"
+    }
+  },
+  {
+    "step": "create order foreign documents",
+    "status": 400,
+    "body": {
+      "message": "One or more documents are invalid for this client"
+    }
+  },
+  {
+    "step": "create order",
+    "status": 201,
+    "body": {
+      "_id": "<id:28>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:4>",
+          "firstName": "Petro",
+          "id": "<id:4>",
+          "lastName": "Koval"
+        },
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Партія 1",
+      "documents": [
+        "<id:19>",
+        "<id:20>"
+      ],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "_id": "<id:2>",
+        "firstName": "Maria",
+        "id": "<id:2>",
+        "lastName": "Manager"
+      },
+      "product": "<id:22>",
+      "quantity": 100,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create order 2",
+    "status": 201,
+    "body": {
+      "_id": "<id:29>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Антени",
+      "documents": [],
+      "id": "<id:29>",
+      "product": "<id:26>",
+      "quantity": 5,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create order 3 overdue",
+    "status": 201,
+    "body": {
+      "_id": "<id:30>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:4>",
+          "firstName": "Petro",
+          "id": "<id:4>",
+          "lastName": "Koval"
+        }
+      ],
+      "client": "<id:7>",
+      "createdAt": "<ts>",
+      "description": "Коробки",
+      "documents": [],
+      "dueDate": "<day-3>",
+      "id": "<id:30>",
+      "manager": {
+        "_id": "<id:1>",
+        "firstName": "Ivan",
+        "id": "<id:1>",
+        "lastName": "Executive"
+      },
+      "product": "<id:27>",
+      "quantity": 20,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "create order 4 completed",
+    "status": 201,
+    "body": {
+      "_id": "<id:31>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Готово",
+      "documents": [],
+      "id": "<id:31>",
+      "product": "<id:26>",
+      "quantity": 1,
+      "status": "completed",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "list orders",
+    "status": 200,
+    "body": [
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Готово",
+        "dueDate": null,
+        "id": "<id:31>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 1,
+        "status": "completed"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:4>",
+            "name": "Petro Koval"
+          }
+        ],
+        "client": {
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "description": "Коробки",
+        "dueDate": "<day-3>",
+        "id": "<id:30>",
+        "manager": {
+          "id": "<id:1>",
+          "name": "Ivan Executive"
+        },
+        "product": {
+          "id": "<id:27>",
+          "name": "Box"
+        },
+        "quantity": 20,
+        "status": "active"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Антени",
+        "dueDate": null,
+        "id": "<id:29>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 5,
+        "status": "active"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:4>",
+            "name": "Petro Koval"
+          },
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Партія 1",
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "manager": {
+          "id": "<id:2>",
+          "name": "Maria Manager"
+        },
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "list orders by status",
+    "status": 200,
+    "body": [
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Готово",
+        "dueDate": null,
+        "id": "<id:31>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 1,
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "step": "list orders by client",
+    "status": 200,
+    "body": [
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:4>",
+            "name": "Petro Koval"
+          }
+        ],
+        "client": {
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "description": "Коробки",
+        "dueDate": "<day-3>",
+        "id": "<id:30>",
+        "manager": {
+          "id": "<id:1>",
+          "name": "Ivan Executive"
+        },
+        "product": {
+          "id": "<id:27>",
+          "name": "Box"
+        },
+        "quantity": 20,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "employee lists orders",
+    "status": 200,
+    "body": [
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Готово",
+        "dueDate": null,
+        "id": "<id:31>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 1,
+        "status": "completed"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Антени",
+        "dueDate": null,
+        "id": "<id:29>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 5,
+        "status": "active"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:4>",
+            "name": "Petro Koval"
+          },
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Партія 1",
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "manager": {
+          "id": "<id:2>",
+          "name": "Maria Manager"
+        },
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "get order",
+    "status": 200,
+    "body": {
+      "assignedEmployees": [
+        {
+          "id": "<id:4>",
+          "name": "Petro Koval"
+        },
+        {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        }
+      ],
+      "client": {
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс"
+      },
+      "description": "Партія 1",
+      "documents": [
+        {
+          "_id": "<id:19>",
+          "createdAt": "<ts>",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "originalName": "bom-rev-a.xlsx",
+          "size": 31
+        },
+        {
+          "_id": "<id:20>",
+          "createdAt": "<ts>",
+          "mimeType": "image/jpeg",
+          "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+          "size": 4
+        }
+      ],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "id": "<id:2>",
+        "name": "Maria Manager"
+      },
+      "product": {
+        "id": "<id:22>",
+        "name": "Плата керування"
+      },
+      "quantity": 100,
+      "status": "active"
+    }
+  },
+  {
+    "step": "employee gets assigned order",
+    "status": 200,
+    "body": {
+      "assignedEmployees": [
+        {
+          "id": "<id:4>",
+          "name": "Petro Koval"
+        },
+        {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        }
+      ],
+      "client": {
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс"
+      },
+      "description": "Партія 1",
+      "documents": [
+        {
+          "_id": "<id:19>",
+          "createdAt": "<ts>",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "originalName": "bom-rev-a.xlsx",
+          "size": 31
+        },
+        {
+          "_id": "<id:20>",
+          "createdAt": "<ts>",
+          "mimeType": "image/jpeg",
+          "originalName": "ÑÐ¾ÑÐ¾ Ð¿Ð»Ð°ÑÐ¸.jpg",
+          "size": 4
+        }
+      ],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "id": "<id:2>",
+        "name": "Maria Manager"
+      },
+      "product": {
+        "id": "<id:22>",
+        "name": "Плата керування"
+      },
+      "quantity": 100,
+      "status": "active"
+    }
+  },
+  {
+    "step": "employee gets unassigned order",
+    "status": 403,
+    "body": {
+      "message": "You are not assigned to this order"
+    }
+  },
+  {
+    "step": "get order malformed id",
+    "status": 400,
+    "body": {
+      "message": "Invalid _id: 123"
+    }
+  },
+  {
+    "step": "employee creates order",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:modify permission"
+    }
+  },
+  {
+    "step": "update order",
+    "status": 200,
+    "body": {
+      "_id": "<id:29>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        },
+        {
+          "_id": "<id:5>",
+          "firstName": "Ivan",
+          "id": "<id:5>",
+          "lastName": "Tkach"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Антени",
+      "documents": [],
+      "dueDate": "<day+5>",
+      "id": "<id:29>",
+      "manager": {
+        "_id": "<id:2>",
+        "firstName": "Maria",
+        "id": "<id:2>",
+        "lastName": "Manager"
+      },
+      "product": "<id:26>",
+      "quantity": 8,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update order clear fields",
+    "status": 200,
+    "body": {
+      "_id": "<id:29>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        },
+        {
+          "_id": "<id:5>",
+          "firstName": "Ivan",
+          "id": "<id:5>",
+          "lastName": "Tkach"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Антени",
+      "documents": [],
+      "id": "<id:29>",
+      "product": "<id:26>",
+      "quantity": 8,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "update order zero quantity",
+    "status": 400,
+    "body": {
+      "message": "quantity must be a positive number"
+    }
+  },
+  {
+    "step": "update order blank description",
+    "status": 400,
+    "body": {
+      "message": "description is required"
+    }
+  },
+  {
+    "step": "update order invalid status",
+    "status": 400,
+    "body": {
+      "message": "Invalid status"
+    }
+  },
+  {
+    "step": "update order foreign documents",
+    "status": 400,
+    "body": {
+      "message": "One or more documents are invalid for this client"
+    }
+  },
+  {
+    "step": "update order documents",
+    "status": 200,
+    "body": {
+      "_id": "<id:28>",
+      "assignedEmployees": [
+        {
+          "_id": "<id:4>",
+          "firstName": "Petro",
+          "id": "<id:4>",
+          "lastName": "Koval"
+        },
+        {
+          "_id": "<id:3>",
+          "firstName": "Олена",
+          "id": "<id:3>",
+          "lastName": "Шевченко"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Партія 1 (уточнено)",
+      "documents": [
+        "<id:20>"
+      ],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "_id": "<id:2>",
+        "firstName": "Maria",
+        "id": "<id:2>",
+        "lastName": "Manager"
+      },
+      "product": "<id:22>",
+      "quantity": 100,
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "executive creates progress",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role"
+    }
+  },
+  {
+    "step": "progress missing order",
+    "status": 400,
+    "body": {
+      "message": "order is required"
+    }
+  },
+  {
+    "step": "progress unknown order",
+    "status": 400,
+    "body": {
+      "message": "order does not exist"
+    }
+  },
+  {
+    "step": "progress unassigned order",
+    "status": 403,
+    "body": {
+      "message": "You are not assigned to this order"
+    }
+  },
+  {
+    "step": "progress inactive order",
+    "status": 400,
+    "body": {
+      "message": "order is not active"
+    }
+  },
+  {
+    "step": "create progress",
+    "status": 201,
+    "body": {
+      "completed": 12,
+      "date": "<day+0>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:32>",
+      "needsRework": 2,
+      "notes": "Пайка",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": {
+        "_id": "<id:33>",
+        "mimeType": "image/jpeg",
+        "originalName": "progress-1.jpg",
+        "size": 5
+      }
+    }
+  },
+  {
+    "step": "create progress duplicate",
+    "status": 409,
+    "body": {
+      "message": "Entry already exists for this order/date — update it instead"
+    }
+  },
+  {
+    "step": "create progress petro",
+    "status": 201,
+    "body": {
+      "completed": 7,
+      "date": "<day+0>",
+      "employee": {
+        "id": "<id:4>",
+        "name": "Petro Koval"
+      },
+      "id": "<id:34>",
+      "needsRework": 0,
+      "notes": "",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": null
+    }
+  },
+  {
+    "step": "create progress order 2",
+    "status": 201,
+    "body": {
+      "completed": 3,
+      "date": "<day+0>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:35>",
+      "needsRework": 0,
+      "notes": "",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:29>",
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": null
+    }
+  },
+  {
+    "step": "uploads after first photo",
+    "status": 0,
+    "body": 12
+  },
+  {
+    "step": "update progress",
+    "status": 200,
+    "body": {
+      "completed": 15,
+      "date": "<day-1>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:32>",
+      "needsRework": 2,
+      "notes": "Пайка + перевірка",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 4,
+      "photo": {
+        "_id": "<id:36>",
+        "mimeType": "image/jpeg",
+        "originalName": "progress-2.jpg",
+        "size": 5
+      }
+    }
+  },
+  {
+    "step": "uploads after photo replaced",
+    "status": 0,
+    "body": 12
+  },
+  {
+    "step": "update progress date",
+    "status": 200,
+    "body": {
+      "completed": 3,
+      "date": "<day-2>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:35>",
+      "needsRework": 0,
+      "notes": "",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:29>",
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": null
+    }
+  },
+  {
+    "step": "update progress negative",
+    "status": 400,
+    "body": {
+      "message": "Path `completed` (-1) is less than minimum allowed value (0)."
+    }
+  },
+  {
+    "step": "update progress not a number",
+    "status": 400,
+    "body": {
+      "message": "Cast to Number failed for value \"NaN\" (type number) at path \"needsRework\""
+    }
+  },
+  {
+    "step": "update progress of other employee",
+    "status": 403,
+    "body": {
+      "message": "Not your entry"
+    }
+  },
+  {
+    "step": "executive updates progress",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role"
+    }
+  },
+  {
+    "step": "list progress",
+    "status": 200,
+    "body": [
+      {
+        "completed": 7,
+        "date": "<day+0>",
+        "employee": {
+          "id": "<id:4>",
+          "name": "Petro Koval"
+        },
+        "id": "<id:34>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      },
+      {
+        "completed": 15,
+        "date": "<day-1>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:32>",
+        "needsRework": 2,
+        "notes": "Пайка + перевірка",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 4,
+        "photo": {
+          "_id": "<id:36>",
+          "mimeType": "image/jpeg",
+          "originalName": "progress-2.jpg",
+          "size": 5
+        }
+      },
+      {
+        "completed": 3,
+        "date": "<day-2>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:35>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      }
+    ]
+  },
+  {
+    "step": "list progress by employee",
+    "status": 200,
+    "body": [
+      {
+        "completed": 15,
+        "date": "<day-1>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:32>",
+        "needsRework": 2,
+        "notes": "Пайка + перевірка",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 4,
+        "photo": {
+          "_id": "<id:36>",
+          "mimeType": "image/jpeg",
+          "originalName": "progress-2.jpg",
+          "size": 5
+        }
+      },
+      {
+        "completed": 3,
+        "date": "<day-2>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:35>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      }
+    ]
+  },
+  {
+    "step": "list progress by order",
+    "status": 200,
+    "body": [
+      {
+        "completed": 3,
+        "date": "<day-2>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:35>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      }
+    ]
+  },
+  {
+    "step": "list progress by range",
+    "status": 200,
+    "body": [
+      {
+        "completed": 15,
+        "date": "<day-1>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:32>",
+        "needsRework": 2,
+        "notes": "Пайка + перевірка",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 4,
+        "photo": {
+          "_id": "<id:36>",
+          "mimeType": "image/jpeg",
+          "originalName": "progress-2.jpg",
+          "size": 5
+        }
+      }
+    ]
+  },
+  {
+    "step": "list progress invalid date",
+    "status": 400,
+    "body": {
+      "message": "Invalid date"
+    }
+  },
+  {
+    "step": "employee lists progress (filter ignored)",
+    "status": 200,
+    "body": [
+      {
+        "completed": 7,
+        "date": "<day+0>",
+        "employee": {
+          "id": "<id:4>",
+          "name": "Petro Koval"
+        },
+        "id": "<id:34>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      }
+    ]
+  },
+  {
+    "step": "get progress",
+    "status": 200,
+    "body": {
+      "completed": 15,
+      "date": "<day-1>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:32>",
+      "needsRework": 2,
+      "notes": "Пайка + перевірка",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 4,
+      "photo": {
+        "_id": "<id:36>",
+        "mimeType": "image/jpeg",
+        "originalName": "progress-2.jpg",
+        "size": 5
+      }
+    }
+  },
+  {
+    "step": "get progress of other employee",
+    "status": 403,
+    "body": {
+      "message": "Not your entry"
+    }
+  },
+  {
+    "step": "manager gets progress",
+    "status": 200,
+    "body": {
+      "completed": 15,
+      "date": "<day-1>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:32>",
+      "needsRework": 2,
+      "notes": "Пайка + перевірка",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 4,
+      "photo": {
+        "_id": "<id:36>",
+        "mimeType": "image/jpeg",
+        "originalName": "progress-2.jpg",
+        "size": 5
+      }
+    }
+  },
+  {
+    "step": "employee downloads own photo",
+    "status": 200,
+    "body": {
+      "type": "image/jpeg"
+    }
+  },
+  {
+    "step": "other employee downloads photo",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:view permission"
+    }
+  },
+  {
+    "step": "dashboard",
+    "status": 200,
+    "body": {
+      "generatedAt": "<ts>",
+      "orders": [
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:4>",
+              "name": "Petro Koval"
+            },
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Партія 1 (уточнено)",
+          "dueDate": "<day+10>",
+          "entries": [
+            {
+              "completed": 7,
+              "date": "<day+0>",
+              "employee": {
+                "id": "<id:4>",
+                "name": "Petro Koval"
+              },
+              "id": "<id:34>",
+              "needsRework": 0,
+              "notes": "",
+              "partiallyAssembled": 0
+            },
+            {
+              "completed": 15,
+              "date": "<day-1>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:32>",
+              "needsRework": 2,
+              "notes": "Пайка + перевірка",
+              "partiallyAssembled": 4
+            }
+          ],
+          "isOverdue": false,
+          "manager": {
+            "id": "<id:2>",
+            "name": "Maria Manager"
+          },
+          "orderId": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          },
+          "quantity": 100,
+          "remaining": 78,
+          "status": "active",
+          "totals": {
+            "completed": 22,
+            "needsRework": 2,
+            "partiallyAssembled": 4
+          }
+        },
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            },
+            {
+              "id": "<id:5>",
+              "name": "Ivan Tkach"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Антени",
+          "dueDate": null,
+          "entries": [
+            {
+              "completed": 3,
+              "date": "<day-2>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:35>",
+              "needsRework": 0,
+              "notes": "",
+              "partiallyAssembled": 0
+            }
+          ],
+          "isOverdue": false,
+          "manager": null,
+          "orderId": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          },
+          "quantity": 8,
+          "remaining": 5,
+          "status": "active",
+          "totals": {
+            "completed": 3,
+            "needsRework": 0,
+            "partiallyAssembled": 0
+          }
+        },
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:4>",
+              "name": "Petro Koval"
+            }
+          ],
+          "client": {
+            "id": "<id:7>",
+            "name": "alpha systems"
+          },
+          "description": "Коробки",
+          "dueDate": "<day-3>",
+          "entries": [],
+          "isOverdue": true,
+          "manager": {
+            "id": "<id:1>",
+            "name": "Ivan Executive"
+          },
+          "orderId": "<id:30>",
+          "product": {
+            "id": "<id:27>",
+            "name": "Box"
+          },
+          "quantity": 20,
+          "remaining": 20,
+          "status": "active",
+          "totals": {
+            "completed": 0,
+            "needsRework": 0,
+            "partiallyAssembled": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "step": "dashboard by employee",
+    "status": 200,
+    "body": {
+      "generatedAt": "<ts>",
+      "orders": [
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:4>",
+              "name": "Petro Koval"
+            },
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Партія 1 (уточнено)",
+          "dueDate": "<day+10>",
+          "entries": [
+            {
+              "completed": 15,
+              "date": "<day-1>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:32>",
+              "needsRework": 2,
+              "notes": "Пайка + перевірка",
+              "partiallyAssembled": 4
+            }
+          ],
+          "isOverdue": false,
+          "manager": {
+            "id": "<id:2>",
+            "name": "Maria Manager"
+          },
+          "orderId": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          },
+          "quantity": 100,
+          "remaining": 78,
+          "status": "active",
+          "totals": {
+            "completed": 22,
+            "needsRework": 2,
+            "partiallyAssembled": 4
+          }
+        },
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            },
+            {
+              "id": "<id:5>",
+              "name": "Ivan Tkach"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Антени",
+          "dueDate": null,
+          "entries": [
+            {
+              "completed": 3,
+              "date": "<day-2>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:35>",
+              "needsRework": 0,
+              "notes": "",
+              "partiallyAssembled": 0
+            }
+          ],
+          "isOverdue": false,
+          "manager": null,
+          "orderId": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          },
+          "quantity": 8,
+          "remaining": 5,
+          "status": "active",
+          "totals": {
+            "completed": 3,
+            "needsRework": 0,
+            "partiallyAssembled": 0
+          }
+        },
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:4>",
+              "name": "Petro Koval"
+            }
+          ],
+          "client": {
+            "id": "<id:7>",
+            "name": "alpha systems"
+          },
+          "description": "Коробки",
+          "dueDate": "<day-3>",
+          "entries": [],
+          "isOverdue": true,
+          "manager": {
+            "id": "<id:1>",
+            "name": "Ivan Executive"
+          },
+          "orderId": "<id:30>",
+          "product": {
+            "id": "<id:27>",
+            "name": "Box"
+          },
+          "quantity": 20,
+          "remaining": 20,
+          "status": "active",
+          "totals": {
+            "completed": 0,
+            "needsRework": 0,
+            "partiallyAssembled": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "step": "employee dashboard",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role"
+    }
+  },
+  {
+    "step": "my orders olena",
+    "status": 200,
+    "body": [
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 0,
+        "dueDate": null,
+        "id": "<id:31>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 1,
+        "remaining": 1,
+        "status": "completed"
+      },
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 3,
+        "dueDate": null,
+        "id": "<id:29>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 8,
+        "remaining": 5,
+        "status": "active"
+      },
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 22,
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "remaining": 78,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "my orders petro",
+    "status": 200,
+    "body": [
+      {
+        "client": {
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "completed": 0,
+        "dueDate": "<day-3>",
+        "id": "<id:30>",
+        "isOverdue": true,
+        "product": {
+          "id": "<id:27>",
+          "name": "Box"
+        },
+        "quantity": 20,
+        "remaining": 20,
+        "status": "active"
+      },
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 22,
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "remaining": 78,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "create progress again today",
+    "status": 201,
+    "body": {
+      "completed": 2,
+      "date": "<day+0>",
+      "employee": {
+        "id": "<id:3>",
+        "name": "Олена Шевченко"
+      },
+      "id": "<id:37>",
+      "needsRework": 0,
+      "notes": "",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": null
+    }
+  },
+  {
+    "step": "update progress date conflict",
+    "status": 409,
+    "body": {
+      "message": "Entry already exists for this order/date"
+    }
+  },
+  {
+    "step": "delete progress of other employee",
+    "status": 403,
+    "body": {
+      "message": "Not your entry"
+    }
+  },
+  {
+    "step": "delete progress",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "get deleted progress",
+    "status": 404,
+    "body": {
+      "message": "Entry not found"
+    }
+  },
+  {
+    "step": "petro progress still there",
+    "status": 200,
+    "body": {
+      "completed": 7,
+      "date": "<day+0>",
+      "employee": {
+        "id": "<id:4>",
+        "name": "Petro Koval"
+      },
+      "id": "<id:34>",
+      "needsRework": 0,
+      "notes": "",
+      "order": {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "id": "<id:28>",
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        }
+      },
+      "partiallyAssembled": 0,
+      "photo": null
+    }
+  },
+  {
+    "step": "employee deletes order",
+    "status": 403,
+    "body": {
+      "message": "Requires ORDERS:modify permission"
+    }
+  },
+  {
+    "step": "delete order",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "get deleted order",
+    "status": 404,
+    "body": {
+      "message": "Order not found"
+    }
+  },
+  {
+    "step": "my orders after order delete",
+    "status": 200,
+    "body": [
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 3,
+        "dueDate": null,
+        "id": "<id:29>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 8,
+        "remaining": 5,
+        "status": "active"
+      },
+      {
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "completed": 22,
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "isOverdue": false,
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "remaining": 78,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "delete document linked from order and product",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "order after document delete",
+    "status": 200,
+    "body": {
+      "assignedEmployees": [
+        {
+          "id": "<id:4>",
+          "name": "Petro Koval"
+        },
+        {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        }
+      ],
+      "client": {
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс"
+      },
+      "description": "Партія 1 (уточнено)",
+      "documents": [],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "id": "<id:2>",
+        "name": "Maria Manager"
+      },
+      "product": {
+        "id": "<id:22>",
+        "name": "Плата керування"
+      },
+      "quantity": 100,
+      "status": "active"
+    }
+  },
+  {
+    "step": "product after document delete",
+    "status": 200,
+    "body": {
+      "_id": "<id:26>",
+      "additionalFiles": [
+        {
+          "_id": "<id:19>",
+          "client": "<id:6>",
+          "createdAt": "<ts>",
+          "filename": "<file.xlsx>",
+          "id": "<id:19>",
+          "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "originalName": "bom-rev-a.xlsx",
+          "size": 31,
+          "updatedAt": "<ts>",
+          "uploadedBy": "<id:1>"
+        }
+      ],
+      "client": "<id:6>",
+      "createdAt": "<ts>",
+      "description": "Gain 5 dBi",
+      "id": "<id:26>",
+      "name": "Antenna v2",
+      "sku": "ANT-7",
+      "type": "Component",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "uploads after document delete",
+    "status": 0,
+    "body": 11
+  },
+  {
+    "step": "delete product",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "orders after product delete",
+    "status": 200,
+    "body": [
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          },
+          {
+            "id": "<id:5>",
+            "name": "Ivan Tkach"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Антени",
+        "dueDate": null,
+        "id": "<id:29>",
+        "manager": null,
+        "product": {
+          "id": "<id:26>",
+          "name": "Antenna v2"
+        },
+        "quantity": 8,
+        "status": "active"
+      },
+      {
+        "assignedEmployees": [
+          {
+            "id": "<id:4>",
+            "name": "Petro Koval"
+          },
+          {
+            "id": "<id:3>",
+            "name": "Олена Шевченко"
+          }
+        ],
+        "client": {
+          "id": "<id:6>",
+          "name": "Борисфен Електронікс"
+        },
+        "description": "Партія 1 (уточнено)",
+        "dueDate": "<day+10>",
+        "id": "<id:28>",
+        "manager": {
+          "id": "<id:2>",
+          "name": "Maria Manager"
+        },
+        "product": {
+          "id": "<id:22>",
+          "name": "Плата керування"
+        },
+        "quantity": 100,
+        "status": "active"
+      }
+    ]
+  },
+  {
+    "step": "order with deleted product",
+    "status": 404,
+    "body": {
+      "message": "Order not found"
+    }
+  },
+  {
+    "step": "delete own account",
+    "status": 400,
+    "body": {
+      "message": "Cannot delete your own account"
+    }
+  },
+  {
+    "step": "delete active user",
+    "status": 400,
+    "body": {
+      "message": "Set status to \"deleted\" before permanently deleting this account"
+    }
+  },
+  {
+    "step": "manager deletes executive",
+    "status": 403,
+    "body": {
+      "message": "Insufficient role to delete this account"
+    }
+  },
+  {
+    "step": "mark petro deleted",
+    "status": 200,
+    "body": {
+      "address": "Kyiv",
+      "avatarUrl": null,
+      "createdAt": "<ts>",
+      "email": "petro@test.local",
+      "firstName": "Petro",
+      "id": "<id:4>",
+      "isActive": false,
+      "jobTitle": "Assembler",
+      "lastName": "Koval",
+      "permissions": [
+        {
+          "action": "view",
+          "key": "PRODUCTS"
+        }
+      ],
+      "phone": "+380 44 000 00 00",
+      "role": "employee",
+      "status": "deleted"
+    }
+  },
+  {
+    "step": "petro session after deactivation",
+    "status": 401,
+    "body": {
+      "message": "Session expired"
+    }
+  },
+  {
+    "step": "login deactivated petro",
+    "status": 401,
+    "body": {
+      "message": "Невірний email або пароль"
+    }
+  },
+  {
+    "step": "purge petro",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "order after user purge",
+    "status": 200,
+    "body": {
+      "assignedEmployees": [
+        {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        }
+      ],
+      "client": {
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс"
+      },
+      "description": "Партія 1 (уточнено)",
+      "documents": [],
+      "dueDate": "<day+10>",
+      "id": "<id:28>",
+      "manager": {
+        "id": "<id:2>",
+        "name": "Maria Manager"
+      },
+      "product": {
+        "id": "<id:22>",
+        "name": "Плата керування"
+      },
+      "quantity": 100,
+      "status": "active"
+    }
+  },
+  {
+    "step": "progress after user purge",
+    "status": 200,
+    "body": [
+      {
+        "completed": 15,
+        "date": "<day-1>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:32>",
+        "needsRework": 2,
+        "notes": "Пайка + перевірка",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          }
+        },
+        "partiallyAssembled": 4,
+        "photo": {
+          "_id": "<id:36>",
+          "mimeType": "image/jpeg",
+          "originalName": "progress-2.jpg",
+          "size": 5
+        }
+      },
+      {
+        "completed": 3,
+        "date": "<day-2>",
+        "employee": {
+          "id": "<id:3>",
+          "name": "Олена Шевченко"
+        },
+        "id": "<id:35>",
+        "needsRework": 0,
+        "notes": "",
+        "order": {
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "id": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          }
+        },
+        "partiallyAssembled": 0,
+        "photo": null
+      }
+    ]
+  },
+  {
+    "step": "dashboard after user purge",
+    "status": 200,
+    "body": {
+      "generatedAt": "<ts>",
+      "orders": [
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Партія 1 (уточнено)",
+          "dueDate": "<day+10>",
+          "entries": [
+            {
+              "completed": 15,
+              "date": "<day-1>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:32>",
+              "needsRework": 2,
+              "notes": "Пайка + перевірка",
+              "partiallyAssembled": 4
+            }
+          ],
+          "isOverdue": false,
+          "manager": {
+            "id": "<id:2>",
+            "name": "Maria Manager"
+          },
+          "orderId": "<id:28>",
+          "product": {
+            "id": "<id:22>",
+            "name": "Плата керування"
+          },
+          "quantity": 100,
+          "remaining": 85,
+          "status": "active",
+          "totals": {
+            "completed": 15,
+            "needsRework": 2,
+            "partiallyAssembled": 4
+          }
+        },
+        {
+          "assignedEmployees": [
+            {
+              "id": "<id:3>",
+              "name": "Олена Шевченко"
+            },
+            {
+              "id": "<id:5>",
+              "name": "Ivan Tkach"
+            }
+          ],
+          "client": {
+            "id": "<id:6>",
+            "name": "Борисфен Електронікс"
+          },
+          "description": "Антени",
+          "dueDate": null,
+          "entries": [
+            {
+              "completed": 3,
+              "date": "<day-2>",
+              "employee": {
+                "id": "<id:3>",
+                "name": "Олена Шевченко"
+              },
+              "id": "<id:35>",
+              "needsRework": 0,
+              "notes": "",
+              "partiallyAssembled": 0
+            }
+          ],
+          "isOverdue": false,
+          "manager": null,
+          "orderId": "<id:29>",
+          "product": {
+            "id": "<id:26>",
+            "name": "Antenna v2"
+          },
+          "quantity": 8,
+          "remaining": 5,
+          "status": "active",
+          "totals": {
+            "completed": 3,
+            "needsRework": 0,
+            "partiallyAssembled": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "step": "purge active client",
+    "status": 400,
+    "body": {
+      "message": "Set status to \"deleted\" before permanently deleting this client"
+    }
+  },
+  {
+    "step": "mark client deleted",
+    "status": 200,
+    "body": {
+      "_id": "<id:6>",
+      "address": "Київ",
+      "code": "BOR-01",
+      "contactName": "Андрій",
+      "createdAt": "<ts>",
+      "email": "info@borysfen.ua",
+      "id": "<id:6>",
+      "name": "Борисфен Електронікс",
+      "notes": "VIP клієнт",
+      "phone": "+380 44 222",
+      "status": "deleted",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "clients include soft-deleted",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:8>",
+        "code": "ZET-03",
+        "createdAt": "<ts>",
+        "email": "new@zeta.io",
+        "id": "<id:8>",
+        "name": "Zeta Labs",
+        "notes": "",
+        "phone": "+1 555 0100",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:7>",
+        "code": "ALP-02",
+        "createdAt": "<ts>",
+        "id": "<id:7>",
+        "name": "alpha systems",
+        "status": "active",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:6>",
+        "address": "Київ",
+        "code": "BOR-01",
+        "contactName": "Андрій",
+        "createdAt": "<ts>",
+        "email": "info@borysfen.ua",
+        "id": "<id:6>",
+        "name": "Борисфен Електронікс",
+        "notes": "VIP клієнт",
+        "phone": "+380 44 222",
+        "status": "deleted",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "purge client",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "uploads after client purge",
+    "status": 0,
+    "body": 3
+  },
+  {
+    "step": "get purged client",
+    "status": 404,
+    "body": {
+      "message": "Client not found"
+    }
+  },
+  {
+    "step": "contracts after client purge",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:17>",
+        "client": {
+          "_id": "<id:7>",
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "createdAt": "<ts>",
+        "documents": [],
+        "endDate": "<day+400>",
+        "id": "<id:17>",
+        "notes": "Оновлено",
+        "startDate": "<day-30>",
+        "status": "active",
+        "title": "Угода №2",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:13>",
+        "client": {
+          "_id": "<id:8>",
+          "id": "<id:8>",
+          "name": "Zeta Labs"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:14>"
+        ],
+        "id": "<id:13>",
+        "status": "active",
+        "title": "Zeta Labs — Договір",
+        "updatedAt": "<ts>"
+      },
+      {
+        "_id": "<id:15>",
+        "client": {
+          "_id": "<id:7>",
+          "id": "<id:7>",
+          "name": "alpha systems"
+        },
+        "createdAt": "<ts>",
+        "documents": [
+          "<id:16>"
+        ],
+        "id": "<id:15>",
+        "status": "active",
+        "title": "alpha systems — Договір",
+        "updatedAt": "<ts>"
+      }
+    ]
+  },
+  {
+    "step": "documents after client purge",
+    "status": 200,
+    "body": [
+      {
+        "_id": "<id:21>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "alpha-spec.pdf",
+        "size": 23,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:16>",
+        "client": "<id:7>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-alpha.pdf",
+        "size": 27,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      },
+      {
+        "_id": "<id:14>",
+        "client": "<id:8>",
+        "createdAt": "<ts>",
+        "filename": "<file.pdf>",
+        "mimeType": "application/pdf",
+        "originalName": "contract-zeta.pdf",
+        "size": 26,
+        "updatedAt": "<ts>",
+        "uploadedBy": "<id:1>"
+      }
+    ]
+  },
+  {
+    "step": "orders after client purge",
+    "status": 200,
+    "body": []
+  },
+  {
+    "step": "progress after client purge",
+    "status": 200,
+    "body": []
+  },
+  {
+    "step": "employee progress after client purge",
+    "status": 200,
+    "body": []
+  },
+  {
+    "step": "get progress of purged order",
+    "status": 404,
+    "body": {
+      "message": "Entry not found"
+    }
+  },
+  {
+    "step": "update progress of purged order",
+    "status": 404,
+    "body": {
+      "message": "Entry not found"
+    }
+  },
+  {
+    "step": "delete progress of purged order",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "dashboard after client purge",
+    "status": 200,
+    "body": {
+      "generatedAt": "<ts>",
+      "orders": []
+    }
+  },
+  {
+    "step": "my orders after client purge",
+    "status": 200,
+    "body": []
+  },
+  {
+    "step": "write from foreign origin",
+    "status": 403,
+    "body": {
+      "message": "Cross-origin request blocked"
+    }
+  },
+  {
+    "step": "write without origin header",
+    "status": 200,
+    "body": {
+      "_id": "<id:7>",
+      "code": "ALP-02",
+      "createdAt": "<ts>",
+      "id": "<id:7>",
+      "name": "alpha systems",
+      "notes": "from a script",
+      "status": "active",
+      "updatedAt": "<ts>"
+    }
+  },
+  {
+    "step": "unknown route",
+    "status": 404,
+    "body": {
+      "message": "Route GET /api/nope not found"
+    }
+  },
+  {
+    "step": "logout",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "me after logout",
+    "status": 401,
+    "body": {
+      "message": "Not signed in"
+    }
+  },
+  {
+    "step": "logout without session",
+    "status": 204,
+    "body": null
+  },
+  {
+    "step": "failed logins until rate limited",
+    "status": 0,
+    "body": [
+      401,
+      401,
+      401,
+      401,
+      401,
+      401,
+      429,
+      429,
+      429,
+      429
+    ]
+  },
+  {
+    "step": "rate limited response",
+    "status": 429,
+    "body": {
+      "message": "Забагато спроб входу. Спробуйте через 15 хвилин."
+    }
+  }
+]

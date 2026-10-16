@@ -1,28 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import { Error as MongooseError } from 'mongoose';
-import { MongoServerError } from 'mongodb';
 import { MulterError } from 'multer';
 import { HttpError } from '../utils/HttpError';
+import { duplicateKeyField, isDatabaseError } from '../utils/dbErrors';
 
 export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction): void {
   console.error(err);
 
-  if (err instanceof MongooseError.ValidationError) {
-    const message = Object.values(err.errors)
-      .map((e) => e.message)
-      .join(', ');
-    res.status(400).json({ message });
+  const duplicate = duplicateKeyField(err);
+  if (duplicate) {
+    res.status(409).json({ message: `Duplicate value for ${duplicate}` });
     return;
   }
 
-  if (err instanceof MongooseError.CastError) {
-    res.status(400).json({ message: `Invalid ${err.path}: ${err.value}` });
-    return;
-  }
-
-  if (err instanceof MongoServerError && err.code === 11000) {
-    const field = Object.keys(err.keyValue || {})[0];
-    res.status(409).json({ message: `Duplicate value for ${field}` });
+  // Database errors carry the failed SQL and its parameters — never send those to the client.
+  if (isDatabaseError(err)) {
+    res.status(500).json({ message: 'Internal Server Error' });
     return;
   }
 

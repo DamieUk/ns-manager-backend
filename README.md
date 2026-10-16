@@ -1,34 +1,63 @@
 # Numenor Backend
 
-Node.js + Express + MongoDB (Mongoose), TypeScript. RBAC, власна авторизація (email + пароль,
-сесії в httpOnly cookie), клієнти/замовлення/продукти/документи, польова шифрація чутливих полів
-(AES-256-GCM), завантажені файли зберігаються на диску самого сервера.
+Node.js + Express + MySQL/MariaDB (Drizzle ORM), TypeScript. RBAC, власна авторизація (email +
+пароль, сесії в httpOnly cookie), клієнти/замовлення/продукти/документи, польова шифрація
+чутливих полів (AES-256-GCM), завантажені файли зберігаються на диску самого сервера. Сторонніх
+сервісів для бази, файлів чи входу немає.
 
 ## Розробка
 
+Потрібен MySQL 8+ або MariaDB 10.6+ з порожньою базою `numenor`.
+
 ```bash
-cp .env.example .env   # заповнити значення (Mongo, SMTP, FIELD_ENCRYPTION_PASSPHRASE)
+cp .env.example .env    # DATABASE_URL, FIELD_ENCRYPTION_PASSPHRASE, за потреби SMTP
 npm install
 npm run dev             # tsx watch, http://localhost:5001
+npm run seed:executive -- "you@example.com" "Ім'я Прізвище"   # перший акаунт; виведе пароль
 ```
 
-Локально MongoDB запускається окремо (наприклад `brew services start mongodb-community`),
-`MONGODB_URI` за замовчуванням вказує на `mongodb://127.0.0.1:27017/numenor`.
+- Таблиці створюються автоматично: при старті сервер застосовує міграції з `drizzle/`.
+- Файли (контракти, BOM, фото до звітів) пишуться в `./uploads` (або в `UPLOAD_DIR`). Тека в `.gitignore`.
+- Без SMTP листи (запрошення, відновлення пароля) не надсилаються, а посилання з них виводиться
+  в консоль сервера — так інвайти працюють і локально. На продакшені без SMTP лист просто не піде.
 
-Файли (контракти, BOM, фото до звітів) пишуться в `./uploads` (або в `UPLOAD_DIR`, якщо задано).
-Тека в `.gitignore`.
+## Тести
 
-Перший акаунт: `npm run seed:executive -- "you@example.com" "Ім'я Прізвище"` — скрипт виведе
-згенерований пароль.
+```bash
+npm test
+```
+
+Тест піднімає окремий сервер на тестовій базі `numenor_test` (стирається перед кожним запуском) з
+тимчасовою текою для файлів і проходить API від імені executive, менеджера й працівників —
+~240 запитів: вхід і сесії, ролі та дозволи, валідація, файли, звіти, дашборд, видалення. Кожна
+відповідь порівнюється з еталоном `test/golden.json` (id, час і назви файлів у сховищі замінено
+плейсхолдерами). Потрібен локальний MySQL з `root` без пароля на `127.0.0.1:3306` (або
+`TEST_MYSQL_URL=mysql://user:pass@host:port`).
+
+Якщо поведінку API змінено свідомо — перезаписати еталон і переглянути diff:
+
+```bash
+UPDATE_GOLDEN=1 npm test && git diff test/golden.json
+```
+
+## База даних
+
+- Схема — `src/db/schema.ts`, SQL-міграції — `drizzle/`. Після зміни схеми: `npm run db:generate`
+  і закомітити новий файл міграції. У нових `CREATE TABLE` дописати вручну
+  `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin` (як у `0000_init.sql`):
+  drizzle-kit не вміє table options, а без цього на хостингу таблиця може отримати latin1.
+- Id — 24-символьні hex-рядки (у форматі, який клієнт отримував завжди).
+- Посилання між записами — звичайні колонки без foreign keys: як і раніше, видалення запису
+  залишає посилання на нього, а читання такі записи пропускає.
+- SQL сумісний і з MySQL 8, і з MariaDB 10.6+ (без JSON-колонок тощо).
 
 ## Авторизація
 
 - Вхід лише email + пароль (`POST /api/auth/login`). Нових користувачів запрошують зі сторінки
   «Користувачі» (лист з посиланням на встановлення пароля) або задають пароль напряму.
-- Після входу бекенд створює сесію (колекція `sessions`, зберігається лише SHA-256 хеш токена)
-  і ставить cookie `numenor_session`: `httpOnly`, `SameSite=Strict`, `Path=/api`, `Secure` у
-  продакшені. Тривалість — `SESSION_TTL_HOURS` (за замовчуванням 12 год); прострочені сесії
-  MongoDB видаляє сама (TTL-індекс).
+- Після входу бекенд створює сесію (таблиця `sessions`, зберігається лише SHA-256 хеш токена) і
+  ставить cookie `numenor_session`: `httpOnly`, `SameSite=Strict`, `Path=/api`, `Secure` у
+  продакшені. Тривалість — `SESSION_TTL_HOURS` (за замовчуванням 12 год).
 - `POST /api/auth/logout` видаляє сесію. Усі сесії користувача відкликаються при зміні/скиданні
   пароля, деактивації та видаленні акаунта.
 - Захист від CSRF: `SameSite=Strict` + перевірка заголовка `Origin` на всіх змінюючих запитах
@@ -40,44 +69,124 @@ npm run dev             # tsx watch, http://localhost:5001
 ```
 src/
   app.ts              # express app (middleware, CORS, роути)
-  server.ts           # entrypoint (mongo connect + listen)
-  config/             # db, passport, mailer, storage (локальний диск)
+  server.ts           # entrypoint (підключення до БД + міграції + listen)
+  db/                 # підключення, схема (Drizzle), генератор id, впорядковані списки
+  models/             # доступ до даних по сутностях + формат відповідей
+  config/             # mailer, storage (локальний диск)
   constants/          # ролі/дозволи
   controllers/        # логіка обробників
   routes/             # маршрути, змонтовані під /api
-  middleware/         # requireAuth, requirePermission, upload, error handling
-  models/             # mongoose-схеми
-  utils/              # шифрування полів, токени, дати, HttpError
+  middleware/         # requireAuth, requirePermission, upload, verifyOrigin, error handling
+  utils/              # шифрування полів, токени, сесії, валідація, дати, HttpError
   scripts/            # seedExecutive.ts — створення першого executive-акаунта
-deploy/
-  docker-compose.yml  # увесь стек: MongoDB + API + клієнт + Caddy (HTTPS)
-  Caddyfile           # /api/* → бекенд, решта → клієнт
-  .env.example        # продакшн-змінні
-  backup.sh           # бекап бази та файлів
+drizzle/              # SQL-міграції (застосовуються при старті)
+test/                 # API-тест і еталон golden.json
+deploy/               # docker-compose для VPS (MySQL + API + клієнт + Caddy), бекап
 ```
 
-## Деплой на власний сервер (VPS)
+## Деплой
 
-Увесь стек працює на одному сервері в Docker: MongoDB, бекенд, статичний клієнт і Caddy, який
+Два варіанти. Обидва тримають базу й файли на тому ж сервері — **бекапи обов'язкові**.
+
+### Варіант A: Spaceship Web Hosting (cPanel)
+
+Бекенд працює як Node.js-застосунок cPanel на піддомені `api.<домен>`, клієнт — статичні файли на
+основному домені. Піддомен того ж домену — це «той самий сайт» для браузера, тому cookie-сесія з
+`SameSite=Strict` працює, а CORS дозволено лише для `CLIENT_ORIGIN`.
+
+Перевірити в cPanel заздалегідь: у «Setup Node.js App» доступна версія Node.js **20 або новіша**;
+база — MySQL 8 або MariaDB 10.6+ (версія видна в phpMyAdmin).
+
+**1. Піддомен.** cPanel → Domains: створити `api.<домен>`. Клієнт — на `<домен>` (`public_html`).
+SSL для обох видає AutoSSL (cPanel → SSL/TLS Status).
+
+**2. База.** cPanel → MySQL Databases: створити базу (наприклад `<cpuser>_numenor`), користувача
+з паролем **лише з літер і цифр** (пароль іде в URL), додати користувача до бази з ALL PRIVILEGES.
+
+**3. Зібрати локально.**
+
+```bash
+# бекенд
+npm ci && npm run build
+zip -r numenor-api.zip dist drizzle package.json package-lock.json
+
+# клієнт (у ns-manager-client)
+VITE_API_URL=https://api.<домен>/api npm run build    # результат — dist/ (разом з .htaccess)
+```
+
+**4. Залити бекенд.** cPanel → File Manager: у домашній теці створити `numenor-api`, завантажити
+й розпакувати туди `numenor-api.zip`. Поруч створити теку `numenor-uploads` (поза `public_html`).
+У `numenor-api` створити файл `.env` (права 600):
+
+```
+NODE_ENV=production
+DATABASE_URL=mysql://<db-user>:<db-password>@localhost:3306/<cpuser>_numenor
+CLIENT_ORIGIN=https://<домен>
+UPLOAD_DIR=/home/<cpuser>/numenor-uploads
+FIELD_ENCRYPTION_PASSPHRASE=<openssl rand -hex 32>
+SESSION_TTL_HOURS=12
+SMTP_HOST=mail.spacemail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=damon@numenorsystems.com
+SMTP_PASSWORD=<пароль поштової скриньки>
+SMTP_FROM="Numenor Systems <damon@numenorsystems.com>"
+```
+
+`FIELD_ENCRYPTION_PASSPHRASE` — новий секрет, **зберегти в надійному місці**: без нього
+зашифровані поля в базі (і в бекапах) не прочитати. Не змінювати після запуску.
+
+**5. Node.js-застосунок.** cPanel → Setup Node.js App → Create Application:
+Node.js — найновіша доступна (≥ 20), Application mode — Production, Application root —
+`numenor-api`, Application URL — `api.<домен>`, startup file — `dist/server.js`. Create →
+Run NPM Install → Restart. Таблиці створяться при першому старті.
+
+Перевірка: `https://api.<домен>/api/health` → `"database":"connected"`, а в полі `ip` — ваша
+справжня публічна IP-адреса. Якщо там `127.0.0.1` чи адреса самого сервера, ліміт спроб входу
+буде спільним для всіх — тоді треба з'ясувати в підтримки, як хостинг передає IP відвідувача.
+
+**6. Перший акаунт.** cPanel → Terminal: виконати команду входу у віртуальне оточення (її
+показано вгорі сторінки застосунку в Setup Node.js App), далі:
+
+```bash
+cd ~/numenor-api && node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Ім'я Прізвище"
+```
+
+Скрипт виведе згенерований пароль. Решту акаунтів — через сторінку «Користувачі».
+
+**7. Клієнт.** Завантажити **вміст** `ns-manager-client/dist/` у `public_html`, включно з
+`.htaccess` (у File Manager — Settings → Show Hidden Files). Відкрити `https://<домен>`.
+
+**8. Бекапи.** Найпростіше — cPanel → Backup: повний бекап акаунта містить і базу, і
+`numenor-uploads`; регулярно завантажувати його собі. Автоматично — cPanel → Cron Jobs, щоночі
+(доступ до бази — у файлі `~/.my.cnf` з правами 600: `[client]` / `user=…` / `password=…`):
+
+```bash
+mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-transaction --no-tablespaces <cpuser>_numenor | gzip > ~/backups/db-$(date +\%F).sql.gz && tar -czf ~/backups/uploads-$(date +\%F).tar.gz -C ~ numenor-uploads && find ~/backups -mtime +14 -delete
+```
+
+Бекап на тому ж хостингу не захищає від втрати акаунта — копії варто періодично забирати собі.
+
+**Оновлення.** Локально знову крок 3; залити новий `dist/` (і `drizzle/`, `package*.json`, якщо
+змінювались) у `numenor-api`, при зміні залежностей — Run NPM Install, далі Restart. Нові
+міграції застосуються при старті. Клієнт — замінити вміст `public_html` новим `dist/`.
+
+### Варіант B: VPS з Docker
+
+Увесь стек працює на одному сервері в Docker: MySQL, бекенд, статичний клієнт і Caddy, який
 автоматично отримує й оновлює HTTPS-сертифікат (Let's Encrypt). Клієнт і API живуть на одному
-домені (`https://<домен>/` і `https://<домен>/api`), тому CORS не потрібен. Сторонніх сервісів
-для бази чи файлів немає — усе на диску сервера.
+домені (`https://<домен>/` і `https://<домен>/api`).
 
 ```
-Інтернет → Caddy :443 ─┬─ /api/*  → api (Node, :5001) ─┬─ mongo (volume mongo-data)
+Інтернет → Caddy :443 ─┬─ /api/*  → api (Node, :5001) ─┬─ db: MySQL (volume db-data)
                        │                               └─ uploads (volume uploads)
                        └─ решта   → web (статичний SPA)
 ```
 
-### 1. Сервер і домен
+**1. Сервер і домен.** VPS з Ubuntu 24.04, мінімум 2 vCPU / 4 GB RAM / 40 GB SSD (регіон — ЄС;
+4 GB — бо на сервері збираються образи й працює MySQL). У DNS — **A-запис** домену на IP сервера.
 
-- VPS з Ubuntu 24.04, мінімум 2 vCPU / 4 GB RAM / 40 GB SSD (будь-який провайдер: Hetzner,
-  DigitalOcean, Contabo тощо; регіон — ЄС). 4 GB потрібні, бо на сервері збираються образи
-  і працює MongoDB.
-- У DNS домену створити **A-запис** (наприклад `app.numenorsystems.com`) на IP сервера.
-  Без цього Caddy не отримає сертифікат.
-
-### 2. Підготовка сервера
+**2. Підготовка сервера.**
 
 ```bash
 ssh root@<IP>
@@ -86,12 +195,9 @@ curl -fsSL https://get.docker.com | sh          # Docker + compose plugin
 ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw --force enable
 ```
 
-Назовні публікуються лише порти 80/443 (Caddy). MongoDB і бекенд доступні тільки всередині
-Docker-мережі.
+Назовні публікуються лише 80/443 (Caddy). MySQL і бекенд доступні тільки всередині Docker-мережі.
 
-### 3. Код
-
-Обидва репозиторії мають лежати поруч — `docker-compose.yml` збирає клієнт з `../../ns-manager-client`:
+**3. Код.** Обидва репозиторії поруч — `docker-compose.yml` збирає клієнт з `../../ns-manager-client`:
 
 ```bash
 mkdir -p /opt/numenor && cd /opt/numenor
@@ -99,83 +205,55 @@ git clone git@github.com:DamieUk/ns-manager-backend.git
 git clone git@github.com:DamieUk/ns-manager-client.git
 ```
 
-(Для приватних репозиторіїв — додати на сервері SSH-ключ як Deploy key у GitHub.)
-
-### 4. Налаштування
+**4. Налаштування.**
 
 ```bash
 cd /opt/numenor/ns-manager-backend/deploy
-cp .env.example .env
-nano .env
+cp .env.example .env && nano .env
 ```
 
 - `DOMAIN` — домен з кроку 1
-- `MONGO_ROOT_PASSWORD` — `openssl rand -hex 24`
-- `FIELD_ENCRYPTION_PASSPHRASE` — новий надійний секрет (не той, що в локальному `.env`).
-  **Зберегти в надійному місці**: без нього зашифровані поля в базі (і в бекапах) не прочитати.
+- `DB_PASSWORD`, `DB_ROOT_PASSWORD` — `openssl rand -hex 24`
+- `FIELD_ENCRYPTION_PASSPHRASE` — новий секрет, **зберегти в надійному місці** (див. варіант A)
 - `SMTP_PASSWORD` — для листів-запрошень і відновлення пароля
 
-`CLIENT_ORIGIN`, `MONGODB_URI` і `UPLOAD_DIR` виводяться автоматично в `docker-compose.yml`
-з `DOMAIN` та паролю Mongo.
+`CLIENT_ORIGIN`, `DATABASE_URL` і `UPLOAD_DIR` задає `docker-compose.yml`.
 
-### 5. Запуск
+**5. Запуск.**
 
 ```bash
-cd /opt/numenor/ns-manager-backend/deploy
 docker compose up -d --build
 docker compose ps                      # усі сервіси running/healthy
-curl https://<DOMAIN>/api/health       # {"status":"ok",...,"mongo":"connected"}
+curl https://<DOMAIN>/api/health       # "database":"connected"
+docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Ім'я Прізвище"
 ```
 
-### 6. Перший executive-акаунт
-
-База стартує порожньою:
-
-```bash
-docker compose exec api node dist/scripts/seedExecutive.js "damon@numenorsystems.com" "Damon Executive"
-```
-
-Скрипт виведе згенерований пароль — зберегти його й увійти. Далі акаунти створюються через UI
-(сторінка «Користувачі»).
-
-### 7. Бекапи
-
-Файли й база тепер лише на цьому сервері — бекапи обов'язкові.
+**6. Бекапи.** Щоночі о 03:15, зберігаються 14 днів у `/var/backups/numenor`:
 
 ```bash
 crontab -e
-# щоночі о 03:15, зберігаються 14 днів у /var/backups/numenor
 15 3 * * * /opt/numenor/ns-manager-backend/deploy/backup.sh >> /var/log/numenor-backup.log 2>&1
 ```
 
-Бекап на тому ж сервері не захищає від втрати самого сервера — варто додатково копіювати
-`/var/backups/numenor` на інше сховище (`rsync` на інший сервер / Storage Box) та/або увімкнути
-автоматичні знімки сервера в панелі провайдера.
-
-Відновлення з бекапу (з теки `deploy/`):
+Копіювати `/var/backups/numenor` ще кудись (`rsync` на інший сервер / Storage Box) та/або
+увімкнути знімки сервера в панелі провайдера. Відновлення (з теки `deploy/`):
 
 ```bash
 B=/var/backups/numenor/<дата>
-docker compose exec -T mongo sh -c 'mongorestore -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --archive --gzip --drop' < $B/mongo.archive.gz
+gunzip -c $B/db.sql.gz | docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" numenor'
 docker compose exec -T api tar -C /app/uploads -xzf - < $B/uploads.tar.gz
 ```
 
-### Оновлення
+**Оновлення.**
 
 ```bash
 cd /opt/numenor/ns-manager-backend && git pull
 cd /opt/numenor/ns-manager-client && git pull
-cd /opt/numenor/ns-manager-backend/deploy && docker compose up -d --build
-docker image prune -f
+cd /opt/numenor/ns-manager-backend/deploy && docker compose up -d --build && docker image prune -f
 ```
 
-Дані (`mongo-data`, `uploads`, сертифікати) лежать у Docker volumes і переживають перезбірку.
+Дані (`db-data`, `uploads`, сертифікати) лежать у Docker volumes і переживають перезбірку.
 **Не** виконувати `docker compose down -v` — це видалить volumes разом з базою та файлами.
 
-### Корисне
-
-```bash
-docker compose logs -f api             # логи бекенда
-docker compose restart api
-docker compose exec mongo sh -c 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" numenor --authenticationDatabase admin'
-```
+Корисне: `docker compose logs -f api`, `docker compose restart api`,
+`docker compose exec db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" numenor'`.

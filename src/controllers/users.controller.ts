@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
-import User, { USER_STATUSES, UserStatus } from '../models/user.model';
-import DailyProgress from '../models/dailyProgress.model';
+import { createUser as insertUser, deleteUser as removeUser, findUserByEmail, findUserById, listUsers as findAllUsers, saveUser, User, USER_STATUSES, UserStatus } from '../models/user.model';
+import { deleteEmployeeEntries } from '../models/dailyProgress.model';
 import { HttpError } from '../utils/HttpError';
 import { canManageRole, ROLES, ROLE_DEFAULT_PERMISSIONS, Role, Permission } from '../constants/permissions';
 import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS, MIN_PASSWORD_LENGTH } from '../utils/authTokens';
@@ -9,12 +9,12 @@ import { sendInviteEmail } from '../config/mailer';
 import { revokeUserSessions } from '../utils/session';
 
 export async function listUsers(req: Request, res: Response): Promise<void> {
-  const users = await User.find().sort({ createdAt: -1 });
+  const users = await findAllUsers();
   res.json(users.map(toUserResponse));
 }
 
 export async function getUserById(req: Request, res: Response): Promise<void> {
-  const user = await User.findById(req.params.id);
+  const user = await findUserById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
   res.json(toUserResponse(user));
 }
@@ -42,15 +42,15 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   if (!role || !ROLES.includes(role)) throw new HttpError(400, 'Invalid role');
   if (!canManageRole(req.user!.role, role)) throw new HttpError(403, 'Insufficient role to create this account');
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const existing = await findUserByEmail(email);
   if (existing) throw new HttpError(409, 'A user with this email already exists');
 
-  const user = await User.create({
-    firstName,
-    lastName,
-    jobTitle,
-    phone,
-    address,
+  const user = await insertUser({
+    firstName: firstName!,
+    lastName: lastName!,
+    jobTitle: jobTitle!,
+    phone: phone!,
+    address: address!,
     status: status || 'working',
     email,
     role,
@@ -60,7 +60,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   const { raw, hash } = generateToken();
   user.passwordTokenHash = hash;
   user.passwordTokenExpires = tokenExpiryDate(ACTIVATION_TOKEN_TTL_MS);
-  await user.save();
+  await saveUser(user);
 
   const activationUrl = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/accept-invite?token=${raw}`;
   try {
@@ -73,7 +73,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateUser(req: Request, res: Response): Promise<void> {
-  const user = await User.findById(req.params.id);
+  const user = await findUserById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
 
   const { firstName, lastName, jobTitle, phone, address, status, role, permissions, isActive } =
@@ -115,13 +115,13 @@ export async function updateUser(req: Request, res: Response): Promise<void> {
   if (permissions !== undefined) user.permissions = permissions;
   if (isActive !== undefined) user.isActive = isActive;
 
-  await user.save();
-  if (!user.isActive) await revokeUserSessions(user._id);
+  await saveUser(user);
+  if (!user.isActive) await revokeUserSessions(user.id);
   res.json(toUserResponse(user));
 }
 
 export async function setPassword(req: Request, res: Response): Promise<void> {
-  const user = await User.findById(req.params.id);
+  const user = await findUserById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
 
   if (!canManageRole(req.user!.role, user.role)) throw new HttpError(403, 'Insufficient role to reset this account');
@@ -135,17 +135,17 @@ export async function setPassword(req: Request, res: Response): Promise<void> {
   user.emailVerified = true;
   user.passwordTokenHash = undefined;
   user.passwordTokenExpires = undefined;
-  await user.save();
-  await revokeUserSessions(user._id);
+  await saveUser(user);
+  await revokeUserSessions(user.id);
 
   res.json({ message: 'ok' });
 }
 
 export async function deleteUser(req: Request, res: Response): Promise<void> {
-  const user = await User.findById(req.params.id);
+  const user = await findUserById(req.params.id);
   if (!user) throw new HttpError(404, 'User not found');
 
-  if (user._id.equals(req.user!._id)) throw new HttpError(400, 'Cannot delete your own account');
+  if (user.id === req.user!.id) throw new HttpError(400, 'Cannot delete your own account');
   if (!canManageRole(req.user!.role, user.role)) throw new HttpError(403, 'Insufficient role to delete this account');
 
   // Two-step deletion: mark the account `status: 'deleted'` first (keeps daily-progress history
@@ -154,15 +154,15 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
     throw new HttpError(400, 'Set status to "deleted" before permanently deleting this account');
   }
 
-  await DailyProgress.deleteMany({ employee: user._id });
-  await revokeUserSessions(user._id);
-  await user.deleteOne();
+  await deleteEmployeeEntries(user.id);
+  await revokeUserSessions(user.id);
+  await removeUser(user.id);
   res.status(204).send();
 }
 
-function toUserResponse(user: InstanceType<typeof User>) {
+function toUserResponse(user: User) {
   return {
-    id: user._id.toString(),
+    id: user.id,
     firstName: user.firstName,
     lastName: user.lastName,
     jobTitle: user.jobTitle,
