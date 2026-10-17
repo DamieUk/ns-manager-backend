@@ -2,6 +2,8 @@ import { Order } from './order.model';
 import { isSigned, listContractsOfClients, paperStatus } from './contract.model';
 import { isPrepaid, listInvoices } from './invoice.model';
 import { isPurchaseOpen, listPurchases } from './purchase.model';
+import { loadPrep, pendingPrep } from './prep.model';
+import { shippedQuantities } from './shipment.model';
 import { nextStage, Stage, stageIndex } from './orderStage.model';
 
 // What is known about a batch's papers and payments when deciding whether it may move on.
@@ -10,6 +12,8 @@ export interface GateContext {
   annexSigned: boolean;
   prepaid: boolean;
   openPurchases: number;
+  prepPending: string[]; // labels of the prep items not done yet
+  shipped: number; // boards on delivery notes
 }
 
 // What a batch needs before it may enter a stage. Moving forward checks the gates of every stage
@@ -22,6 +26,8 @@ const GATES: Array<{ stage: Stage; unmet: (order: Order, ctx: GateContext) => st
   { stage: 'invoicing', unmet: (o) => !o.unitPrice && 'Зафіксуйте ціну за плату в гривнях' },
   { stage: 'procurement', unmet: (_, ctx) => !ctx.prepaid && 'Чекаємо передоплату' },
   { stage: 'assembly', unmet: (_, ctx) => ctx.openPurchases > 0 && `Не всі закупівлі отримані (${ctx.openPurchases})` },
+  { stage: 'assembly', unmet: (_, ctx) => ctx.prepPending.length > 0 && `Підготовка не завершена: ${ctx.prepPending.join(', ')}` },
+  { stage: 'done', unmet: (o, ctx) => ctx.shipped < o.quantity && `Відвантажено ${ctx.shipped} з ${o.quantity} плат` },
 ];
 
 export function stageBlockers(order: Order, ctx: GateContext, target: Stage): string[] {
@@ -46,10 +52,12 @@ export function isPriceLocked(order: Order): boolean {
 
 export async function loadGateContexts(orders: Order[]): Promise<Map<string, GateContext>> {
   const orderIds = orders.map((o) => o.id);
-  const [contracts, invoices, purchases] = await Promise.all([
+  const [contracts, invoices, purchases, prep, shipped] = await Promise.all([
     listContractsOfClients([...new Set(orders.map((o) => o.clientId))]),
     listInvoices({ orderIds }),
     listPurchases({ orderIds }),
+    loadPrep(orderIds),
+    shippedQuantities(orderIds),
   ]);
   return new Map(
     orders.map((order) => {
@@ -62,6 +70,8 @@ export async function loadGateContexts(orders: Order[]): Promise<Map<string, Gat
           annexSigned: own.some((c) => c.type === 'annex' && c.orderId === order.id && isSigned(c)),
           prepaid: isPrepaid(invoices.filter((i) => i.orderId === order.id)),
           openPurchases: purchases.filter((p) => p.orderId === order.id && isPurchaseOpen(p)).length,
+          prepPending: pendingPrep(prep.get(order.id) ?? []),
+          shipped: shipped.get(order.id) ?? 0,
         },
       ];
     })

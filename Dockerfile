@@ -13,6 +13,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY drizzle ./drizzle
+COPY assets ./assets
 # Owned by `node` so the named volume mounted here inherits writable permissions on first start.
 RUN mkdir -p /app/uploads && chown node:node /app/uploads
 USER node

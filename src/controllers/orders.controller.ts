@@ -23,6 +23,10 @@ import { listEntries } from '../models/dailyProgress.model';
 import { invoiceJson, invoiceTotals, listInvoices } from '../models/invoice.model';
 import { listPurchases, purchaseJson } from '../models/purchase.model';
 import { getCompany, vatRateOf } from '../models/company.model';
+import { clearPrepDocument, loadPrep, PREP_DOCUMENT_TYPE, PREP_ITEMS, PREP_STATUSES, PrepItemKey, PrepStatus, savePrepItem } from '../models/prep.model';
+import { listShipments } from '../models/shipment.model';
+import { createDocument } from '../models/document.model';
+import { documentFromFile } from '../utils/documentFromFile';
 import { HttpError } from '../utils/HttpError';
 import { byId, castId, castIds, castNumber } from '../utils/validate';
 import { normalizeToUTCMidnight } from '../utils/normalizeDate';
@@ -133,6 +137,7 @@ function toOrderResponse(order: Order, refs: OrderRefs, gate?: GateContext) {
       priceLocked: isPriceLocked(order),
       nextStage: nextStage(order.stage) ?? null,
       blockers: nextStageBlockers(order, gate),
+      shipped: gate.shipped,
     }),
   };
 }
@@ -162,7 +167,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
     throw new HttpError(403, 'You are not assigned to this order');
   }
 
-  const [docs, events, entries, annexes, invoices, purchases, gates, company] = await Promise.all([
+  const [docs, events, entries, annexes, invoices, purchases, gates, company, prepByOrder, shipments] = await Promise.all([
     findDocumentsByIds(order.documents),
     listStageEvents(order.id),
     listEntries({ orderId: order.id }),
@@ -171,9 +176,23 @@ export async function getById(req: Request, res: Response): Promise<void> {
     isOwner ? listPurchases({ orderIds: [order.id] }) : Promise.resolve([]),
     isOwner ? loadGateContexts([order]) : undefined,
     getCompany(),
+    loadPrep([order.id]),
+    listShipments({ orderIds: [order.id] }),
   ]);
-  const annexDocs = byId(await findDocumentsByIds([...new Set(annexes.flatMap((a) => a.documents))]));
-  const eventUsers = byId(await findUsersByIds([...new Set(events.flatMap((e) => (e.userId ? [e.userId] : [])))]));
+  const prep = prepByOrder.get(order.id) ?? [];
+  const linkedDocs = byId(
+    await findDocumentsByIds([...new Set([...annexes.flatMap((a) => a.documents), ...prep.flatMap((p) => (p.documentId ? [p.documentId] : []))])])
+  );
+  const eventUsers = byId(
+    await findUsersByIds([...new Set([...events.map((e) => e.userId), ...prep.map((p) => p.updatedBy)].filter((id): id is string => Boolean(id)))])
+  );
+  const shippedHere = shipments.map((s) => ({
+    id: s.id,
+    number: s.number,
+    shippedAt: s.shippedAt,
+    quantity: s.lines.filter((l) => l.orderId === order.id).reduce((sum, l) => sum + l.quantity, 0),
+  }));
+  const shipped = shippedHere.reduce((sum, s) => sum + s.quantity, 0);
 
   const progress = entries.reduce(
     (acc, e) => ({
@@ -195,6 +214,19 @@ export async function getById(req: Request, res: Response): Promise<void> {
       createdAt: doc.createdAt,
     })),
     progress: { ...progress, remaining: Math.max(order.quantity - progress.completed, 0) },
+    prep: prep.map((p) => {
+      const doc = p.documentId ? linkedDocs.get(p.documentId) : undefined;
+      const user = p.updatedBy ? eventUsers.get(p.updatedBy) : undefined;
+      return {
+        item: p.item,
+        status: p.status,
+        document: doc ? { _id: doc.id, originalName: doc.originalName, mimeType: doc.mimeType, size: doc.size, type: doc.type, createdAt: doc.createdAt } : null,
+        note: p.note ?? null,
+        updatedBy: user ? personJson(user) : null,
+        updatedAt: p.updatedAt ?? null,
+      };
+    }),
+    shipping: { shipped, remaining: Math.max(order.quantity - shipped, 0), notes: shippedHere },
     history: events.map((e) => {
       const user = e.userId ? eventUsers.get(e.userId) : undefined;
       return {
@@ -208,7 +240,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
     }),
     ...(isOwner && {
       annexes: annexes.map((a) =>
-        contractJson(a, { documents: resolveDocs(a.documents, annexDocs).map((d) => documentJson(d, { withId: true })) })
+        contractJson(a, { documents: resolveDocs(a.documents, linkedDocs).map((d) => documentJson(d, { withId: true })) })
       ),
       invoices: invoices.map(invoiceJson),
       payments: (() => {
@@ -350,6 +382,7 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
   if (documents !== undefined) {
     await assertDocumentsBelongToClient(documents, order.clientId);
+    for (const removed of order.documents.filter((id) => !documents.includes(id))) await clearPrepDocument(order.id, removed);
     order.documents = documents;
   }
   applyPrice(order, body, req.user);
@@ -386,5 +419,38 @@ export async function remove(req: Request, res: Response): Promise<void> {
   }
 
   await deleteOrder(order.id);
+  res.status(204).send();
+}
+
+// Marks a prep item (pnp_program, stencil, thermal_profile) done / not needed / pending, with an
+// optional file — the owners and the batch's employees, who do this work. A file attached here
+// also joins the batch's files, typed after the item.
+export async function updatePrep(req: Request, res: Response): Promise<void> {
+  const order = await findOrderById(req.params.id);
+  if (!order) throw new HttpError(404, 'Order not found');
+  const isOwner = req.user!.role === 'executive';
+  if (!isOwner && !order.assignedEmployees.includes(req.user!.id)) throw new HttpError(403, 'You are not assigned to this order');
+
+  const item = req.params.item as PrepItemKey;
+  if (!PREP_ITEMS.includes(item)) throw new HttpError(400, 'Invalid prep item');
+  const [current] = (await loadPrep([order.id])).get(order.id)!.filter((p) => p.item === item);
+  const { status, note } = req.body as { status?: string; note?: string };
+  if (status !== undefined && !PREP_STATUSES.includes(status as PrepStatus)) throw new HttpError(400, 'Invalid status');
+
+  let documentId = current.documentId;
+  if (req.file) {
+    const doc = await createDocument(await documentFromFile(req.file, order.clientId, req.user!.id, PREP_DOCUMENT_TYPE[item]));
+    documentId = doc.id;
+    order.documents = [...order.documents, doc.id];
+    await saveOrder(order);
+  }
+
+  await savePrepItem(order.id, {
+    item,
+    status: (status as PrepStatus | undefined) ?? (req.file ? 'done' : current.status),
+    documentId,
+    note: note !== undefined ? note : current.note,
+    updatedBy: req.user!.id,
+  });
   res.status(204).send();
 }

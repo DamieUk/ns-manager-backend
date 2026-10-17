@@ -4,6 +4,7 @@ import { contractJson, createContract, defaultContractTitle, deleteClientContrac
 import { createDocument, deleteClientDocuments, Doc, documentJson, findDocumentsByIds, listDocuments, resolveDocs } from '../models/document.model';
 import { deleteClientOrders } from '../models/order.model';
 import { deleteClientProducts } from '../models/product.model';
+import { deleteClientShipments } from '../models/shipment.model';
 import { HttpError } from '../utils/HttpError';
 import { byId, castDate } from '../utils/validate';
 import { documentFromFile } from '../utils/documentFromFile';
@@ -146,6 +147,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
 
   const documents = await listDocuments({ clientId: client.id });
 
+  await deleteClientShipments(client.id);
   await deleteClientOrders(client.id);
   await deleteClientProducts(client.id);
   await deleteClientContracts(client.id);

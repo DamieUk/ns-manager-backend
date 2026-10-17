@@ -8,6 +8,7 @@ import { castId, castNumber, Validator } from '../utils/validate';
 import { isDuplicateKeyError } from '../utils/dbErrors';
 import { deleteOrderInvoices } from './invoice.model';
 import { deleteOrderPurchases } from './purchase.model';
+import { deleteOrderPrep } from './prep.model';
 import {
   Currency,
   CURRENCIES,
@@ -270,6 +271,7 @@ async function deleteOrderRows(ids: string[]): Promise<void> {
     await deleteStageEvents(tx, ids);
     await deleteOrderInvoices(tx, ids);
     await deleteOrderPurchases(tx, ids);
+    await deleteOrderPrep(tx, ids);
     await tx.delete(orders).where(inArray(orders.id, ids));
   });
 }

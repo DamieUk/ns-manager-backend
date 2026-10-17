@@ -11,6 +11,11 @@ const ALLOWED_MIME_TYPES = new Set([
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/zip',
+  // BOMs exported as HTML or CSV, pick-and-place programs and oven profiles in machine formats.
+  'text/html',
+  'text/csv',
+  'text/plain',
+  'application/octet-stream',
 ]);
 
 export const upload = multer({

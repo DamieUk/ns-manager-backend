@@ -1,10 +1,10 @@
-import { and, asc, eq, inArray, like, SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, SQL } from 'drizzle-orm';
 import { db } from '../db';
 import { invoices } from '../db/schema';
 import { newId } from '../db/ids';
 import { Executor } from '../db/lists';
+import { withDailyNumber } from '../db/numbers';
 import { encryptField, decryptField } from '../utils/fieldEncryption';
-import { isDuplicateKeyError } from '../utils/dbErrors';
 import { castString, Validator } from '../utils/validate';
 
 // prepayment: the advance that opens procurement; balance: the rest after it; full: the whole price at once.
@@ -20,6 +20,7 @@ export interface Invoice {
   orderId: string;
   clientId: string;
   kind: InvoiceKind;
+  description?: string; // the printed line; derived from the batch when empty
   amount: number;
   vatRate: number;
   issuedAt: Date;
@@ -44,6 +45,7 @@ function fromRow(row: Row): Invoice {
     orderId: row.orderId,
     clientId: row.clientId,
     kind: row.kind as InvoiceKind,
+    description: row.description ?? undefined,
     amount: row.amount,
     vatRate: row.vatRate,
     issuedAt: row.issuedAt,
@@ -60,6 +62,7 @@ function fromRow(row: Row): Invoice {
 
 function toColumns(i: Omit<Invoice, 'id' | 'number' | 'createdAt' | 'updatedAt'>) {
   i.note = castString(i.note)?.trim() || undefined;
+  i.description = castString(i.description)?.trim() || undefined;
   new Validator()
     .oneOf(i.kind, INVOICE_KINDS, 'kind')
     .oneOf(i.status, INVOICE_STATUSES, 'status')
@@ -71,6 +74,7 @@ function toColumns(i: Omit<Invoice, 'id' | 'number' | 'createdAt' | 'updatedAt'>
     orderId: i.orderId,
     clientId: i.clientId,
     kind: i.kind,
+    description: i.description ?? null,
     amount: i.amount,
     vatRate: i.vatRate,
     issuedAt: i.issuedAt,
@@ -97,33 +101,15 @@ export async function findInvoiceById(id: string): Promise<Invoice | null> {
   return row ? fromRow(row) : null;
 }
 
-// Documents are numbered by their date and the sequence within the day: «070926-1», «070926-2»
-// for the 7th of September 2026 (as on the paper invoices and delivery notes).
-export function datePrefix(day: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(day.getUTCDate())}${pad(day.getUTCMonth() + 1)}${pad(day.getUTCFullYear() % 100)}`;
-}
-
-async function nextInvoiceNumber(issuedAt: Date): Promise<string> {
-  const prefix = datePrefix(issuedAt);
-  const rows = await db().select({ number: invoices.number }).from(invoices).where(like(invoices.number, `${prefix}-%`));
-  const max = Math.max(0, ...rows.map((r) => Number(r.number.slice(prefix.length + 1)) || 0));
-  return `${prefix}-${max + 1}`;
-}
-
 export async function createInvoice(input: NewInvoice): Promise<Invoice> {
   const now = new Date();
   const invoice: Invoice = { id: newId(), number: '', ...input, status: 'issued', createdAt: now, updatedAt: now };
   const columns = toColumns(invoice);
-  for (let attempt = 0; ; attempt++) {
-    invoice.number = await nextInvoiceNumber(invoice.issuedAt);
-    try {
-      await db().insert(invoices).values({ id: invoice.id, number: invoice.number, ...columns, createdAt: now, updatedAt: now });
-      return invoice;
-    } catch (err) {
-      if (!isDuplicateKeyError(err) || attempt >= 4) throw err;
-    }
-  }
+  return withDailyNumber(invoices, invoices.number, invoice.issuedAt, async (number) => {
+    invoice.number = number;
+    await db().insert(invoices).values({ id: invoice.id, number, ...columns, createdAt: now, updatedAt: now });
+    return invoice;
+  });
 }
 
 export async function saveInvoice(invoice: Invoice): Promise<void> {
@@ -173,6 +159,7 @@ export function invoiceJson(i: Invoice) {
     number: i.number,
     order: i.orderId,
     kind: i.kind,
+    description: i.description ?? null,
     amount: i.amount,
     vatRate: i.vatRate,
     vatAmount: vatOf(i.amount, i.vatRate),

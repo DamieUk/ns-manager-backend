@@ -13,6 +13,7 @@ import dashboardRoutes from './dashboard.routes';
 import invoicesRoutes from './invoices.routes';
 import purchasesRoutes from './purchases.routes';
 import companyRoutes from './company.routes';
+import shipmentsRoutes from './shipments.routes';
 
 const router = Router();
 
@@ -29,5 +30,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/invoices', invoicesRoutes);
 router.use('/purchases', purchasesRoutes);
 router.use('/company', companyRoutes);
+router.use('/shipments', shipmentsRoutes);
 
 export default router;

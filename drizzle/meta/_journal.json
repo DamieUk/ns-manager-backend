@@ -29,6 +29,13 @@
       "when": 1792193241859,
       "tag": "0003_batches_invoices_procurement",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1792194889261,
+      "tag": "0004_shipments_prep",
+      "breakpoints": true
     }
   ]
 }

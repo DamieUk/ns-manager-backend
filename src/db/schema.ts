@@ -262,6 +262,7 @@ export const invoices = mysqlTable(
     orderId: ref('order_id').notNull(),
     clientId: ref('client_id').notNull(),
     kind: varchar('kind', { length: 16 }).notNull(), // prepayment | balance | full
+    description: text('description'), // the line on the printed invoice; derived from the batch when empty
     amount: money('amount').notNull(), // without VAT
     vatRate: int('vat_rate').notNull(), // 0 or 20 (%)
     issuedAt: stamp('issued_at').notNull(),
@@ -296,4 +297,52 @@ export const purchases = mysqlTable(
     ...timestamps(),
   },
   (t) => [index('purchases_order_id').on(t.orderId), index('purchases_status').on(t.status)]
+);
+
+// The prep checklist of a batch before assembly: one row per item (pnp_program, stencil,
+// thermal_profile) once someone has touched it; a missing row means «pending».
+export const orderPrep = mysqlTable(
+  'order_prep',
+  {
+    orderId: ref('order_id').notNull(),
+    item: varchar('item', { length: 24 }).notNull(),
+    status: varchar('status', { length: 16 }).notNull(), // pending | done | not_needed
+    documentId: ref('document_id'), // the program / profile file, also among the batch's files
+    note: text('note'), // encrypted
+    updatedBy: ref('updated_by').notNull(),
+    updatedAt: stamp('updated_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.orderId, t.item] })]
+);
+
+// Delivery notes (видаткові накладні): what was shipped to a client, possibly from several of its
+// batches at once. Prices are copied from the batches when the note is made, VAT on top.
+export const shipments = mysqlTable(
+  'shipments',
+  {
+    id: id(),
+    number: varchar('number', { length: 24 }).notNull(), // «070926-1»: the note's date DDMMYY, then the day's sequence
+    clientId: ref('client_id').notNull(),
+    shippedAt: stamp('shipped_at').notNull(),
+    vatRate: int('vat_rate').notNull(),
+    carrier: varchar('carrier', { length: 64 }), // e.g. «Нова пошта»
+    trackingNumber: varchar('tracking_number', { length: 64 }), // ТТН
+    note: text('note'), // encrypted
+    createdBy: ref('created_by').notNull(),
+    ...timestamps(),
+  },
+  (t) => [uniqueIndex('shipments_number').on(t.number), index('shipments_client_id').on(t.clientId)]
+);
+
+export const shipmentLines = mysqlTable(
+  'shipment_lines',
+  {
+    shipmentId: ref('shipment_id').notNull(),
+    position: int('position').notNull(),
+    orderId: ref('order_id').notNull(),
+    description: text('description').notNull(),
+    quantity: int('quantity').notNull(),
+    unitPrice: money('unit_price').notNull(), // UAH without VAT, as agreed for the batch
+  },
+  (t) => [primaryKey({ columns: [t.shipmentId, t.position] }), index('shipment_lines_order_id').on(t.orderId)]
 );

@@ -19,6 +19,12 @@ import { HttpError } from '../utils/HttpError';
 import { castId, castNumber } from '../utils/validate';
 import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 import { loadOrderLinks } from './orderLinks';
+import { findClientById } from '../models/client.model';
+import { findProductsByIds } from '../models/product.model';
+import { isSigned, listContracts, paperStatus } from '../models/contract.model';
+import { buildInvoicePdf } from '../documents/invoicePdf';
+import { assertRequisites } from '../documents/parties';
+import { sendPdf } from '../utils/sendPdf';
 
 // A date field from a request: undefined when absent, null when cleared.
 function dayField(value: unknown): Date | null | undefined {
@@ -70,7 +76,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 // Invoices are issued from the invoicing stage on, once the annex is signed and the UAH price
 // fixed. `amount` is without VAT. The first one is the prepayment unless it covers the whole price.
 export async function create(req: Request, res: Response): Promise<void> {
-  const { order: orderId, kind, amount, issuedAt, dueAt, note } = req.body as Record<string, unknown>;
+  const { order: orderId, kind, description, amount, issuedAt, dueAt, note } = req.body as Record<string, unknown>;
   const order = orderId ? await findOrderById(orderId) : null;
   if (!order) throw new HttpError(400, 'order does not exist');
   if (order.stage === 'cancelled' || stageIndex(order.stage) < stageIndex('invoicing')) {
@@ -89,6 +95,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     orderId: order.id,
     clientId: order.clientId,
     kind: (kind as InvoiceKind | undefined) ?? defaultKind,
+    description: typeof description === 'string' ? description : undefined,
     amount: value,
     vatRate: vatRateOf(await getCompany()),
     issuedAt: dayField(issuedAt) ?? normalizeToUTCMidnight(new Date()),
@@ -102,7 +109,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 // Edits an unpaid invoice, cancels it (status: 'cancelled') or restores it (status: 'issued').
 export async function update(req: Request, res: Response): Promise<void> {
   const invoice = await findInvoice(req.params.id);
-  const { kind, amount, issuedAt, dueAt, note, status } = req.body as Record<string, unknown>;
+  const { kind, description, amount, issuedAt, dueAt, note, status } = req.body as Record<string, unknown>;
   const order = await findOrderById(invoice.orderId);
   if (!order) throw new HttpError(404, 'Invoice not found');
 
@@ -120,6 +127,10 @@ export async function update(req: Request, res: Response): Promise<void> {
   const due = dayField(dueAt);
   if (due !== undefined) invoice.dueAt = due ?? undefined;
   if (note !== undefined) invoice.note = typeof note === 'string' ? note : undefined;
+  if (description !== undefined) {
+    if (hasPayment) throw new HttpError(409, 'Оплачений рахунок не змінюють: спершу скасуйте оплату');
+    invoice.description = typeof description === 'string' ? description : undefined;
+  }
 
   if (status !== undefined) {
     if (status === 'cancelled') {
@@ -163,4 +174,28 @@ export async function remove(req: Request, res: Response): Promise<void> {
   if (invoice.paidAmount !== undefined) throw new HttpError(409, 'Рахунок з оплатою не видаляють');
   await deleteInvoice(invoice.id);
   res.status(204).send();
+}
+
+// The invoice as a PDF in our document layout, with the annex and framework contract it is based on.
+export async function pdf(req: Request, res: Response): Promise<void> {
+  const invoice = await findInvoice(req.params.id);
+  const order = await findOrderById(invoice.orderId);
+  const client = order ? await findClientById(order.clientId) : null;
+  if (!order || !client) throw new HttpError(404, 'Invoice not found');
+  const [company, [product], contracts] = await Promise.all([getCompany(), findProductsByIds([order.productId]), listContracts({ clientId: client.id })]);
+  assertRequisites(company, client);
+
+  const annex = contracts
+    .filter((c) => c.type === 'annex' && c.orderId === order.id && isSigned(c))
+    .sort((a, b) => b.signedAt!.getTime() - a.signedAt!.getTime())[0];
+  const pdfBuffer = await buildInvoicePdf({
+    invoice,
+    order,
+    productName: product?.name ?? '',
+    client,
+    company,
+    annex: annex ? { contractId: annex.id, number: annex.number ?? null, signedAt: annex.signedAt ?? null } : null,
+    framework: paperStatus(contracts).framework,
+  });
+  sendPdf(res, pdfBuffer, `Рахунок ${invoice.number}.pdf`);
 }
