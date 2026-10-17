@@ -14,6 +14,8 @@ import invoicesRoutes from './invoices.routes';
 import purchasesRoutes from './purchases.routes';
 import companyRoutes from './company.routes';
 import shipmentsRoutes from './shipments.routes';
+import leavesRoutes from './leaves.routes';
+import profileRoutes from './profile.routes';
 
 const router = Router();
 
@@ -31,5 +33,7 @@ router.use('/invoices', invoicesRoutes);
 router.use('/purchases', purchasesRoutes);
 router.use('/company', companyRoutes);
 router.use('/shipments', shipmentsRoutes);
+router.use('/leaves', leavesRoutes);
+router.use('/profile', profileRoutes);
 
 export default router;

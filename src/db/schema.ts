@@ -346,3 +346,22 @@ export const shipmentLines = mysqlTable(
   },
   (t) => [primaryKey({ columns: [t.shipmentId, t.position] }), index('shipment_lines_order_id').on(t.orderId)]
 );
+
+// Leave requests (відпустки, лікарняні): filed by anyone, approved or rejected by an owner.
+export const leaveRequests = mysqlTable(
+  'leave_requests',
+  {
+    id: id(),
+    userId: ref('user_id').notNull(),
+    kind: varchar('kind', { length: 16 }).notNull(), // vacation | sick | unpaid | other
+    startDate: stamp('start_date').notNull(), // UTC midnight, inclusive
+    endDate: stamp('end_date').notNull(), // UTC midnight, inclusive
+    reason: text('reason'), // encrypted
+    status: varchar('status', { length: 16 }).notNull(), // pending | approved | rejected | cancelled
+    decidedBy: ref('decided_by'),
+    decidedAt: stamp('decided_at'),
+    decisionNote: text('decision_note'), // encrypted
+    ...timestamps(),
+  },
+  (t) => [index('leave_requests_user_id').on(t.userId), index('leave_requests_status').on(t.status)]
+);

@@ -2,15 +2,24 @@ import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import { createUser as insertUser, deleteUser as removeUser, findUserByEmail, findUserById, listUsers as findAllUsers, saveUser, User, USER_STATUSES, UserStatus } from '../models/user.model';
 import { deleteEmployeeEntries } from '../models/dailyProgress.model';
+import { deleteUserLeaves, listLeaves } from '../models/leave.model';
+import { normalizeToUTCMidnight } from '../utils/normalizeDate';
 import { HttpError } from '../utils/HttpError';
 import { canManageRole, ROLES, ROLE_DEFAULT_PERMISSIONS, Role, Permission } from '../constants/permissions';
 import { generateToken, tokenExpiryDate, ACTIVATION_TOKEN_TTL_MS, MIN_PASSWORD_LENGTH } from '../utils/authTokens';
 import { sendInviteEmail } from '../config/mailer';
 import { revokeUserSessions } from '../utils/session';
 
+// Each user with the end of the approved leave they are on today, if any.
 export async function listUsers(req: Request, res: Response): Promise<void> {
-  const users = await findAllUsers();
-  res.json(users.map(toUserResponse));
+  const today = normalizeToUTCMidnight(new Date());
+  const [users, away] = await Promise.all([findAllUsers(), listLeaves({ statuses: ['approved'], from: today, to: today })]);
+  res.json(
+    users.map((u) => {
+      const leave = away.find((l) => l.userId === u.id);
+      return { ...toUserResponse(u), onLeave: leave ? { kind: leave.kind, until: leave.endDate } : null };
+    })
+  );
 }
 
 export async function getUserById(req: Request, res: Response): Promise<void> {
@@ -155,6 +164,7 @@ export async function deleteUser(req: Request, res: Response): Promise<void> {
   }
 
   await deleteEmployeeEntries(user.id);
+  await deleteUserLeaves(user.id);
   await revokeUserSessions(user.id);
   await removeUser(user.id);
   res.status(204).send();
