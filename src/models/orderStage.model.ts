@@ -95,6 +95,17 @@ export async function listStageEvents(orderId: string): Promise<StageEvent[]> {
   return rows.map(fromRow);
 }
 
+// The histories of the given batches (all batches when omitted), oldest first.
+export async function listStageEventsOf(orderIds?: string[]): Promise<StageEvent[]> {
+  if (orderIds && orderIds.length === 0) return [];
+  const rows = await db()
+    .select()
+    .from(orderStageEvents)
+    .where(orderIds ? inArray(orderStageEvents.orderId, orderIds) : undefined)
+    .orderBy(asc(orderStageEvents.createdAt), asc(orderStageEvents.id));
+  return rows.map(fromRow);
+}
+
 export async function deleteStageEvents(executor: Executor, orderIds: string[]): Promise<void> {
   if (orderIds.length === 0) return;
   await executor.delete(orderStageEvents).where(inArray(orderStageEvents.orderId, orderIds));
