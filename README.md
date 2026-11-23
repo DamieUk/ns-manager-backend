@@ -189,22 +189,23 @@ mkdir -p ~/backups && mysqldump --defaults-extra-file=$HOME/.my.cnf --single-tra
 сервера замість записів-заглушок, а `www` — CNAME на `@` (Caddy перенаправить www на основний
 домен). Без цього Caddy не отримає сертифікат.
 
-**2. Підготовка сервера.**
+**2. Підготовка сервера.** Під час створення VPS у панелі додати свій **SSH-ключ**, а root-пароль
+задати довгий і випадковий (він знадобиться лише для консолі в панелі). Потім одразу:
 
 ```bash
-ssh root@<IP>
-apt update && apt upgrade -y && apt install -y rsync
-curl -fsSL https://get.docker.com | sh          # Docker + compose plugin
-# спершу дозволити свій SSH-порт (у Spaceship VPS це 22022, не 22), інакше ufw відріже доступ
-ufw allow 22022/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw allow 443/udp && ufw --force enable
-
-# swap 2 GB: на 2 GB RAM збирання образів (npm ci, vite build) інакше може впертися в пам'ять
-fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
-echo '/swapfile none swap sw 0 0' >> /etc/fstab
+ssh -p 22022 root@<IP> 'bash -s' < deploy/server-setup.sh
 ```
 
+Скрипт `deploy/server-setup.sh`:
+- **вимикає вхід по SSH за паролем** (лише ключі, root тільки з ключем). Образ Spaceship вмикає
+  паролі у своєму `00-custom.conf`, тож без цього сервер рано чи пізно зламають перебором. У
+  листопаді 2026 так і сталося: на сервер поставили DDoS-бота, і Spaceship його заблокував;
+- ставить fail2ban на SSH;
+- вмикає ufw: назовні лише SSH (22022), 80 і 443;
+- вмикає автоматичні оновлення безпеки;
+- встановлює Docker і swap 2 GB, потрібний на 2 GB RAM для збирання образів.
+
 Назовні публікуються лише 80/443 (Caddy). MySQL і бекенд доступні тільки всередині Docker-мережі.
-Підключення: `ssh -p 22022 root@<IP>`.
 
 **3. Код.** Обидва репозиторії поруч — `docker-compose.yml` збирає клієнт з `../../ns-manager-client`:
 
