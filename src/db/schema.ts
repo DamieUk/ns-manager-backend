@@ -153,7 +153,10 @@ export const orders = mysqlTable(
     number: varchar('number', { length: 16 }).notNull(), // «26-001»: two-digit year, sequence within it
     clientId: ref('client_id').notNull(),
     productId: ref('product_id').notNull(),
-    quantity: int('quantity').notNull(),
+    quantity: int('quantity').notNull(), // as in the annex, invoices and delivery notes
+    // How many boards the shop actually makes and ships, for its own accounting; often more than
+    // the papers say. Null: the same as `quantity`. Progress and what is left follow this number.
+    actualQuantity: int('actual_quantity'),
     description: text('description').notNull(), // encrypted
     status: varchar('status', { length: 16 }).notNull(),
     stage: varchar('stage', { length: 16 }).notNull().default('quote'),
@@ -341,7 +344,8 @@ export const shipmentLines = mysqlTable(
     position: int('position').notNull(),
     orderId: ref('order_id').notNull(),
     description: text('description').notNull(),
-    quantity: int('quantity').notNull(),
+    quantity: int('quantity').notNull(), // printed on the delivery note, with the price
+    actualQuantity: int('actual_quantity'), // boards that actually went out; null: the same as `quantity`
     unitPrice: money('unit_price').notNull(), // UAH without VAT, as agreed for the batch
   },
   (t) => [primaryKey({ columns: [t.shipmentId, t.position] }), index('shipment_lines_order_id').on(t.orderId)]

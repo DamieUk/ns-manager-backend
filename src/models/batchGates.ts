@@ -13,7 +13,8 @@ export interface GateContext {
   prepaid: boolean;
   openPurchases: number;
   prepPending: string[]; // labels of the prep items not done yet
-  shipped: number; // boards on delivery notes
+  shipped: number; // boards on delivery notes (what the papers say was shipped)
+  shippedActual: number; // boards that really went out
 }
 
 // What a batch needs before it may enter a stage. Moving forward checks the gates of every stage
@@ -27,7 +28,7 @@ const GATES: Array<{ stage: Stage; unmet: (order: Order, ctx: GateContext) => st
   { stage: 'procurement', unmet: (_, ctx) => !ctx.prepaid && 'Чекаємо передоплату' },
   { stage: 'assembly', unmet: (_, ctx) => ctx.openPurchases > 0 && `Не всі закупівлі отримані (${ctx.openPurchases})` },
   { stage: 'assembly', unmet: (_, ctx) => ctx.prepPending.length > 0 && `Підготовка не завершена: ${ctx.prepPending.join(', ')}` },
-  { stage: 'done', unmet: (o, ctx) => ctx.shipped < o.quantity && `Відвантажено ${ctx.shipped} з ${o.quantity} плат` },
+  { stage: 'done', unmet: (o, ctx) => ctx.shipped < o.quantity && `За накладними відвантажено ${ctx.shipped} з ${o.quantity} плат` },
 ];
 
 export function stageBlockers(order: Order, ctx: GateContext, target: Stage): string[] {
@@ -71,7 +72,8 @@ export async function loadGateContexts(orders: Order[]): Promise<Map<string, Gat
           prepaid: isPrepaid(invoices.filter((i) => i.orderId === order.id)),
           openPurchases: purchases.filter((p) => p.orderId === order.id && isPurchaseOpen(p)).length,
           prepPending: pendingPrep(prep.get(order.id) ?? []),
-          shipped: shipped.get(order.id) ?? 0,
+          shipped: shipped.get(order.id)?.documented ?? 0,
+          shippedActual: shipped.get(order.id)?.actual ?? 0,
         },
       ];
     })

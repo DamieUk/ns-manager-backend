@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { batchTotal, listOrders, Order } from '../models/order.model';
+import { batchTotal, listOrders, Order, workQuantity } from '../models/order.model';
 import { listStageEventsOf, ORDER_STAGES, Stage, stageIndex, WORK_STAGES } from '../models/orderStage.model';
 import { invoiceTotal, isInvoiceOverdue, listInvoices } from '../models/invoice.model';
 import { isPurchaseOpen, listPurchases } from '../models/purchase.model';
-import { listShipments } from '../models/shipment.model';
+import { actualShipped, listShipments } from '../models/shipment.model';
 import { listEntries } from '../models/dailyProgress.model';
 import { findClientsByIds } from '../models/client.model';
 import { findProductsByIds } from '../models/product.model';
@@ -56,7 +56,8 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
   const active = visible.filter((o) => o.status === 'active');
 
   const shippedByOrder = new Map<string, number>();
-  for (const s of shipments) for (const l of s.lines) shippedByOrder.set(l.orderId, (shippedByOrder.get(l.orderId) ?? 0) + l.quantity);
+  // Boards that really went out (the delivery notes may list fewer).
+  for (const s of shipments) for (const l of s.lines) shippedByOrder.set(l.orderId, (shippedByOrder.get(l.orderId) ?? 0) + actualShipped(l));
 
   // Pipeline: open batches per stage, their boards and value without VAT.
   const pipeline = OPEN_STAGES.map((stage) => {
@@ -64,7 +65,7 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
     return {
       stage,
       batches: here.length,
-      boards: here.reduce((sum, o) => sum + o.quantity, 0),
+      boards: here.reduce((sum, o) => sum + workQuantity(o), 0),
       value: round(here.reduce((sum, o) => sum + (batchTotal(o) ?? 0), 0)),
     };
   });
@@ -114,8 +115,8 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
       client: clientsById.get(o.clientId)!.name,
       product: productsById.get(o.productId)!.name,
       stage: o.stage,
-      quantity: o.quantity,
-      completed: Math.min(completedByOrder.get(o.id) ?? 0, o.quantity),
+      quantity: workQuantity(o),
+      completed: Math.min(completedByOrder.get(o.id) ?? 0, workQuantity(o)),
       shipped: shippedByOrder.get(o.id) ?? 0,
       dueDate: o.dueDate ?? null,
       isOverdue: Boolean(o.dueDate) && o.dueDate! < now,
@@ -164,7 +165,7 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
   };
   const shippingMonths = months.map((month) => ({
     month,
-    boards: shipments.filter((s) => monthKey(s.shippedAt) === month).reduce((sum, s) => sum + s.lines.reduce((n, l) => n + l.quantity, 0), 0),
+    boards: shipments.filter((s) => monthKey(s.shippedAt) === month).reduce((sum, s) => sum + s.lines.reduce((n, l) => n + actualShipped(l), 0), 0),
   }));
 
   // The team today.
@@ -182,7 +183,7 @@ export async function getOverview(req: Request, res: Response): Promise<void> {
     generatedAt: now.toISOString(),
     kpis: {
       activeBatches: active.length,
-      boardsInWork: inWork.reduce((sum, o) => sum + Math.max(o.quantity - (shippedByOrder.get(o.id) ?? 0), 0), 0),
+      boardsInWork: inWork.reduce((sum, o) => sum + Math.max(workQuantity(o) - (shippedByOrder.get(o.id) ?? 0), 0), 0),
       overdueBatches: active.filter((o) => o.dueDate && o.dueDate < now).length,
       awaiting: round(receivables.notDue + receivables.overdue),
       overdueAmount: receivables.overdue,

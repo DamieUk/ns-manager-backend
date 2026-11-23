@@ -43,6 +43,13 @@
       "when": 1792195430165,
       "tag": "0005_leave_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1795399015024,
+      "tag": "0006_actual_quantities",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,7 @@ import {
   batchTotal,
   orderJson,
   roundMoney,
+  workQuantity,
   saveOrder,
 } from '../models/order.model';
 import { CURRENCIES, Currency, isStage, listStageEvents, nextStage } from '../models/orderStage.model';
@@ -24,7 +25,7 @@ import { invoiceJson, invoiceTotals, listInvoices } from '../models/invoice.mode
 import { listPurchases, purchaseJson } from '../models/purchase.model';
 import { getCompany, vatRateOf } from '../models/company.model';
 import { clearPrepDocument, loadPrep, PREP_DOCUMENT_TYPE, PREP_ITEMS, PREP_STATUSES, PrepItemKey, PrepStatus, savePrepItem } from '../models/prep.model';
-import { listShipments } from '../models/shipment.model';
+import { actualShipped, listShipments } from '../models/shipment.model';
 import { createDocument } from '../models/document.model';
 import { documentFromFile } from '../utils/documentFromFile';
 import { HttpError } from '../utils/HttpError';
@@ -119,6 +120,8 @@ function toOrderResponse(order: Order, refs: OrderRefs, gate?: GateContext) {
     client: { id: client.id, name: client.name },
     product: { id: product.id, name: product.name },
     quantity: order.quantity,
+    actualQuantity: order.actualQuantity ?? null,
+    workQuantity: workQuantity(order),
     description: order.description,
     status: order.status,
     stage: order.stage,
@@ -138,6 +141,7 @@ function toOrderResponse(order: Order, refs: OrderRefs, gate?: GateContext) {
       nextStage: nextStage(order.stage) ?? null,
       blockers: nextStageBlockers(order, gate),
       shipped: gate.shipped,
+      shippedActual: gate.shippedActual,
     }),
   };
 }
@@ -186,13 +190,19 @@ export async function getById(req: Request, res: Response): Promise<void> {
   const eventUsers = byId(
     await findUsersByIds([...new Set([...events.map((e) => e.userId), ...prep.map((p) => p.updatedBy)].filter((id): id is string => Boolean(id)))])
   );
-  const shippedHere = shipments.map((s) => ({
-    id: s.id,
-    number: s.number,
-    shippedAt: s.shippedAt,
-    quantity: s.lines.filter((l) => l.orderId === order.id).reduce((sum, l) => sum + l.quantity, 0),
-  }));
-  const shipped = shippedHere.reduce((sum, s) => sum + s.quantity, 0);
+  const shippedHere = shipments.map((s) => {
+    const lines = s.lines.filter((l) => l.orderId === order.id);
+    return {
+      id: s.id,
+      number: s.number,
+      shippedAt: s.shippedAt,
+      quantity: lines.reduce((sum, l) => sum + l.quantity, 0),
+      actualQuantity: lines.reduce((sum, l) => sum + actualShipped(l), 0),
+    };
+  });
+  const shipped = shippedHere.reduce((sum, s) => sum + s.actualQuantity, 0);
+  const documented = shippedHere.reduce((sum, s) => sum + s.quantity, 0);
+  const target = workQuantity(order);
 
   const progress = entries.reduce(
     (acc, e) => ({
@@ -213,7 +223,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
       type: doc.type,
       createdAt: doc.createdAt,
     })),
-    progress: { ...progress, remaining: Math.max(order.quantity - progress.completed, 0) },
+    progress: { ...progress, remaining: Math.max(target - progress.completed, 0) },
     prep: prep.map((p) => {
       const doc = p.documentId ? linkedDocs.get(p.documentId) : undefined;
       const user = p.updatedBy ? eventUsers.get(p.updatedBy) : undefined;
@@ -226,7 +236,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
         updatedAt: p.updatedAt ?? null,
       };
     }),
-    shipping: { shipped, remaining: Math.max(order.quantity - shipped, 0), notes: shippedHere },
+    shipping: { shipped, documented, remaining: Math.max(target - shipped, 0), notes: shippedHere },
     history: events.map((e) => {
       const user = e.userId ? eventUsers.get(e.userId) : undefined;
       return {
@@ -273,13 +283,15 @@ export async function listMine(req: Request, res: Response): Promise<void> {
     const client = refs.clients.get(order.clientId)!;
     const product = refs.products.get(order.productId)!;
     const completed = completedByOrder.get(order.id) ?? 0;
-    const remaining = Math.max(order.quantity - completed, 0);
+    const remaining = Math.max(workQuantity(order) - completed, 0);
     return {
       id: order.id,
       number: order.number,
       client: { id: client.id, name: client.name },
       product: { id: product.id, name: product.name },
       quantity: order.quantity,
+      actualQuantity: order.actualQuantity ?? null,
+      workQuantity: workQuantity(order),
       status: order.status,
       stage: order.stage,
       dueDate: order.dueDate ?? null,
@@ -296,11 +308,22 @@ interface OrderBody extends PriceInput {
   client?: string;
   product?: string;
   quantity?: number;
+  actualQuantity?: number | string | null; // null or '' clears it: the same as quantity
   description?: string;
   dueDate?: string | null;
   manager?: string | null;
   assignedEmployees?: string[];
   documents?: string[];
+}
+
+// The actual board count from a request: undefined when absent, null when cleared. It is the
+// shop's own number, so unlike `quantity` it can change at any stage.
+function actualQuantityField(value: OrderBody['actualQuantity']): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) throw new HttpError(400, 'Фактична кількість має бути цілим числом більше нуля');
+  return n;
 }
 
 // New batches start at the quote stage; stages change only through POST /orders/:id/stage.
@@ -330,6 +353,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       clientId,
       productId: castId(product),
       quantity,
+      actualQuantity: actualQuantityField(body.actualQuantity) ?? undefined,
       description,
       dueDate: dueDate ? normalizeToUTCMidnight(dueDate) : undefined,
       managerId: manager || undefined,
@@ -365,6 +389,8 @@ export async function update(req: Request, res: Response): Promise<void> {
     if (isPriceLocked(order)) throw new HttpError(409, 'Кількість зафіксована додатком: щоб змінити її, поверніть партію на етап «Погодження»');
     order.quantity = quantity;
   }
+  const actual = actualQuantityField(body.actualQuantity);
+  if (actual !== undefined) order.actualQuantity = actual ?? undefined;
   if (description !== undefined) {
     if (!description.trim()) throw new HttpError(400, 'description is required');
     order.description = description;

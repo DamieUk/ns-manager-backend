@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createShipment, deleteShipment, findShipmentById, listShipments, Shipment, ShipmentLine, shipmentJson, shippedQuantities } from '../models/shipment.model';
+import { createShipment, deleteShipment, findShipmentById, listShipments, Shipment, ShipmentLine, shipmentJson } from '../models/shipment.model';
 import { findOrderById, Order } from '../models/order.model';
 import { findClientById, findClientsByIds } from '../models/client.model';
 import { findProductsByIds } from '../models/product.model';
@@ -48,11 +48,22 @@ export async function list(req: Request, res: Response): Promise<void> {
 interface LineInput {
   order?: unknown;
   quantity?: unknown;
+  actualQuantity?: unknown;
   description?: unknown;
 }
 
+// A whole number of boards, 0 or more; undefined when not given.
+function boards(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) throw new HttpError(400, 'Кількість має бути цілим числом');
+  return n;
+}
+
 // A delivery note for one client, with lines from its batches at the shipping stage. Each line
-// takes the batch's agreed price per board; no batch can ship more boards than it has left.
+// takes the batch's agreed price per board. A line has the quantity printed on the note and,
+// when it differs, how many boards really went out. Neither is capped by what the batch has
+// left: the shop often ships more than the papers say.
 export async function create(req: Request, res: Response): Promise<void> {
   const { client: clientId, shippedAt, carrier, trackingNumber, note, lines } = req.body as Record<string, unknown>;
   const client = clientId ? await findClientById(clientId) : null;
@@ -65,25 +76,18 @@ export async function create(req: Request, res: Response): Promise<void> {
     if (!order || order.clientId !== client.id) throw new HttpError(400, 'Партія не належить цьому клієнту');
     orders.set(order.id, order);
   }
-  const [shipped, products] = await Promise.all([
-    shippedQuantities([...orders.keys()]),
-    findProductsByIds([...new Set([...orders.values()].map((o) => o.productId))]),
-  ]);
+  const products = await findProductsByIds([...new Set([...orders.values()].map((o) => o.productId))]);
   const productNames = new Map(products.map((p) => [p.id, p.name]));
 
-  const planned = new Map<string, number>();
   const shipmentLines: ShipmentLine[] = (lines as LineInput[]).map((line) => {
     const order = orders.get(castId(line.order))!;
     if (order.stage !== 'shipping') throw new HttpError(409, `Партія № ${order.number} ще не на етапі «Відвантаження»`);
     if (order.unitPrice === undefined) throw new HttpError(409, `У партії № ${order.number} немає ціни`);
-    const quantity = Number(line.quantity);
-    if (!Number.isInteger(quantity) || quantity < 1) throw new HttpError(400, 'Кількість має бути цілим числом більше нуля');
-    const total = (planned.get(order.id) ?? 0) + quantity;
-    const left = order.quantity - (shipped.get(order.id) ?? 0);
-    if (total > left) throw new HttpError(409, `Партія № ${order.number}: залишилось відвантажити ${left} шт.`);
-    planned.set(order.id, total);
+    const quantity = boards(line.quantity) ?? 0;
+    const actual = boards(line.actualQuantity);
+    if (quantity === 0 && !actual) throw new HttpError(400, `Партія № ${order.number}: вкажіть кількість`);
     const description = typeof line.description === 'string' && line.description.trim() ? line.description.trim() : (productNames.get(order.productId) ?? '');
-    return { orderId: order.id, description, quantity, unitPrice: order.unitPrice };
+    return { orderId: order.id, description, quantity, actualQuantity: actual === quantity ? undefined : actual, unitPrice: order.unitPrice };
   });
 
   const shipment = await createShipment({
@@ -110,6 +114,9 @@ export async function pdf(req: Request, res: Response): Promise<void> {
   const shipment = await findShipment(req.params.id);
   const client = await findClientById(shipment.clientId);
   if (!client) throw new HttpError(404, 'Shipment not found');
+  if (!shipment.lines.some((l) => l.quantity > 0)) {
+    throw new HttpError(409, 'У цій відправці немає позицій для накладної: усі плати пройшли лише за фактом');
+  }
   const company = await getCompany();
   assertRequisites(company, client);
   const invoices = (await listInvoices({ orderIds: [...new Set(shipment.lines.map((l) => l.orderId))] })).filter((i) => i.status !== 'cancelled');

@@ -24,7 +24,8 @@ export function buildDeliveryNotePdf({ shipment, client, company, invoices }: De
   let y = drawHeader(doc, company.name, `ВИДАТКОВА НАКЛАДНА № ${shipment.number}`, subtitle);
   y = drawParties(doc, supplierParty(company), clientParty(client, 'Отримувач:'), y);
 
-  const rows = shipment.lines.map((l) => ({
+  // Only what the note itself lists; boards that went out on top of it are the shop's own record.
+  const rows = shipment.lines.filter((l) => l.quantity > 0).map((l) => ({
     description: l.description,
     quantity: l.quantity,
     price: l.unitPrice,

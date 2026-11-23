@@ -9,9 +9,13 @@ import { castString } from '../utils/validate';
 export interface ShipmentLine {
   orderId: string;
   description: string;
-  quantity: number;
+  quantity: number; // on the delivery note
+  actualQuantity?: number; // what really went out, when it differs; see actualShipped
   unitPrice: number; // UAH without VAT
 }
+
+// The boards that really left with a line: often more than the delivery note says.
+export const actualShipped = (l: Pick<ShipmentLine, 'quantity' | 'actualQuantity'>) => l.actualQuantity ?? l.quantity;
 
 export interface Shipment {
   id: string;
@@ -54,7 +58,13 @@ async function withLines(rows: (typeof shipments.$inferSelect)[]): Promise<Shipm
     lines: lines
       .filter((l) => l.shipmentId === row.id)
       .sort((a, b) => a.position - b.position)
-      .map((l) => ({ orderId: l.orderId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice })),
+      .map((l) => ({
+        orderId: l.orderId,
+        description: l.description,
+        quantity: l.quantity,
+        actualQuantity: l.actualQuantity ?? undefined,
+        unitPrice: l.unitPrice,
+      })),
     createdBy: row.createdBy,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -79,12 +89,19 @@ export async function findShipmentById(id: string): Promise<Shipment | null> {
   return row ? (await withLines([row]))[0] : null;
 }
 
-// Boards shipped so far per batch.
-export async function shippedQuantities(orderIds: string[]): Promise<Map<string, number>> {
-  const result = new Map(orderIds.map((id) => [id, 0]));
+// Boards shipped so far per batch: on the delivery notes (`documented`) and in fact (`actual`).
+export async function shippedQuantities(orderIds: string[]): Promise<Map<string, { documented: number; actual: number }>> {
+  const result = new Map(orderIds.map((id) => [id, { documented: 0, actual: 0 }]));
   if (orderIds.length === 0) return result;
-  const rows = await db().select({ orderId: shipmentLines.orderId, quantity: shipmentLines.quantity }).from(shipmentLines).where(inArray(shipmentLines.orderId, orderIds));
-  for (const r of rows) result.set(r.orderId, (result.get(r.orderId) ?? 0) + r.quantity);
+  const rows = await db()
+    .select({ orderId: shipmentLines.orderId, quantity: shipmentLines.quantity, actualQuantity: shipmentLines.actualQuantity })
+    .from(shipmentLines)
+    .where(inArray(shipmentLines.orderId, orderIds));
+  for (const r of rows) {
+    const t = result.get(r.orderId)!;
+    t.documented += r.quantity;
+    t.actual += r.actualQuantity ?? r.quantity;
+  }
   return result;
 }
 
@@ -116,7 +133,9 @@ export async function createShipment(input: NewShipment): Promise<Shipment> {
         createdAt: now,
         updatedAt: now,
       });
-      await tx.insert(shipmentLines).values(shipment.lines.map((l, position) => ({ shipmentId: shipment.id, position, ...l })));
+      await tx
+        .insert(shipmentLines)
+        .values(shipment.lines.map((l, position) => ({ shipmentId: shipment.id, position, ...l, actualQuantity: l.actualQuantity ?? null })));
     });
     return shipment;
   });
@@ -147,7 +166,7 @@ export function shipmentJson(s: Shipment) {
     carrier: s.carrier ?? null,
     trackingNumber: s.trackingNumber ?? null,
     note: s.note ?? null,
-    lines: s.lines.map((l) => ({ ...l, order: l.orderId, sum: round(l.quantity * l.unitPrice) })),
+    lines: s.lines.map((l) => ({ ...l, actualQuantity: actualShipped(l), order: l.orderId, sum: round(l.quantity * l.unitPrice) })),
     ...shipmentTotals(s),
     createdAt: s.createdAt,
   };

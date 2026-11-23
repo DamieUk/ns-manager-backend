@@ -27,7 +27,8 @@ export interface Order {
   number: string;
   clientId: string;
   productId: string;
-  quantity: number;
+  quantity: number; // as in the papers
+  actualQuantity?: number; // what the shop really makes, for itself; see workQuantity
   description: string;
   status: OrderStatus; // follows `stage`
   stage: Stage;
@@ -75,6 +76,7 @@ async function withLists(rows: Row[]): Promise<Order[]> {
     clientId: row.clientId,
     productId: row.productId,
     quantity: row.quantity,
+    actualQuantity: row.actualQuantity ?? undefined,
     description: decryptField(row.description) ?? '',
     status: row.status as OrderStatus,
     stage: row.stage as Stage,
@@ -97,11 +99,17 @@ const optionalNumber = (value: unknown, path: string) => castNumber(value, path)
 // Money is kept to the kopiyka (cent), exchange rates to four decimals.
 export const roundMoney = (n: number) => Math.round(n * 100) / 100;
 
+// The boards the shop works towards: the actual count when it differs from the papers. Progress,
+// what is left to make and to ship follow it; prices and documents follow `quantity`.
+export const workQuantity = (o: Pick<Order, 'quantity' | 'actualQuantity'>) => o.actualQuantity ?? o.quantity;
+
 // The batch price without VAT: quantity × the agreed price per board.
 export const batchTotal = (o: Pick<Order, 'unitPrice' | 'quantity'>) => (o.unitPrice === undefined ? undefined : roundMoney(o.unitPrice * o.quantity));
 
 function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) {
   o.quantity = castNumber(o.quantity, 'quantity') as number;
+  o.actualQuantity = castNumber(o.actualQuantity, 'actualQuantity') ?? undefined;
+  if (o.actualQuantity === o.quantity) o.actualQuantity = undefined;
   o.managerId = o.managerId === undefined || o.managerId === null ? undefined : castId(o.managerId, 'manager');
   o.assignedEmployees = (o.assignedEmployees ?? []).map((id) => castId(id, 'assignedEmployees'));
   o.documents = (o.documents ?? []).map((id) => castId(id, 'documents'));
@@ -118,6 +126,7 @@ function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) 
     .required(o.productId, 'product')
     .required(o.quantity, 'quantity')
     .min(o.quantity, 1, 'quantity')
+    .min(o.actualQuantity, 1, 'actualQuantity')
     .required(o.description, 'description')
     .oneOf(o.stage, STAGES, 'stage')
     .oneOf(o.quoteCurrency, CURRENCIES, 'quoteCurrency')
@@ -129,6 +138,7 @@ function toColumns(o: Omit<Order, 'id' | 'number' | 'createdAt' | 'updatedAt'>) 
     clientId: o.clientId,
     productId: o.productId,
     quantity: o.quantity,
+    actualQuantity: o.actualQuantity ?? null,
     description: encryptField(o.description)!,
     status: o.status,
     stage: o.stage,
@@ -293,6 +303,7 @@ export function orderJson(o: Order, people: { manager?: object | null; assignedE
     client: o.clientId,
     product: o.productId,
     quantity: o.quantity,
+    actualQuantity: o.actualQuantity,
     description: o.description,
     status: o.status,
     stage: o.stage,

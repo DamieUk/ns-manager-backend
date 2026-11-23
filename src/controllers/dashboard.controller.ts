@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { listOrdersInStages } from '../models/order.model';
+import { listOrdersInStages, workQuantity } from '../models/order.model';
 import { WORK_STAGES } from '../models/orderStage.model';
 import { listEntries } from '../models/dailyProgress.model';
 import { findUsersByIds, User } from '../models/user.model';
@@ -51,7 +51,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
           stage: order.stage,
           product: { id: product.id, name: product.name },
           client: { id: client.id, name: client.name },
-          quantity: order.quantity,
+          quantity: workQuantity(order),
           description: order.description,
           status: order.status,
           dueDate: order.dueDate ?? null,
@@ -59,7 +59,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
           manager: manager ? { id: manager.id, name: `${manager.firstName} ${manager.lastName}` } : null,
           assignedEmployees: assignedEmployees.map((e) => ({ id: e.id, name: `${e.firstName} ${e.lastName}` })),
           totals,
-          remaining: Math.max(order.quantity - totals.completed, 0),
+          remaining: Math.max(workQuantity(order) - totals.completed, 0),
           entries: visibleEntries.map((e) => {
             const employee = employees.get(e.employeeId)!;
             return {
